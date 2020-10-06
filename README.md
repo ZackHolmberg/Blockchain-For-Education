@@ -5,5 +5,5 @@ Feel free to send [me](mailto:holmbezt@myumanitoba.ca) any feedback that you may
 
 This README will likely be edited to include a project overview and design documentation over the next few weeks. My contact information is as follows:
 
-Name: Zack Holmberg
+Name: Zack Holmberg  
 Email: holmbezt@myumanitoba.ca
