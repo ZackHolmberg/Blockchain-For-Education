@@ -3,4 +3,7 @@ This repository contains the project documents and code for my Blockchain Honour
 
 Feel free to send [me](mailto:holmbezt@myumanitoba.ca) any feedback that you may have about this project, or alternatively, feel free to make any changes to the repository within a new branch and start a pull request. 
 
-This README will likely be edited to include a project overview and design documentation over the next few weeks. 
+This README will likely be edited to include a project overview and design documentation over the next few weeks. My contact information is as follows:
+
+Name: Zack Holmberg
+Email: holmbezt@myumanitoba.ca
