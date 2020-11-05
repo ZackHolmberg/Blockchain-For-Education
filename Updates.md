@@ -13,3 +13,16 @@
 
 - Held requirements gathering meetings with stakeholders for COMP 2140 and COMP 3010.
 - Created the GitHub repository and initial project documentation.
+
+## October 11th - October 24th
+
+- Started conceptualizing the COMP 2140 and COMP 3010 components.
+- Finalized ideas.
+- Began formal design and high-level architecture.
+- Finalized high-level design.
+- Began finalizing low-level implementation details.
+
+## October 25th - November 7th
+
+- Started implementation of COMP 3010 material.
+
