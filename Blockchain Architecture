@@ -1,14 +1,14 @@
-<mxfile host="app.diagrams.net" modified="2020-11-15T06:26:56.072Z" agent="5.0 (Macintosh)" etag="dMxmpsUDAyIvXgSMd1xz" version="13.9.8" type="github">
+<mxfile host="app.diagrams.net" modified="2020-11-16T04:56:23.538Z" agent="5.0 (Macintosh)" etag="uawhN8EboIrd74gZgp7D" version="13.9.8" type="github">
   <diagram name="Page-1" id="6133507b-19e7-1e82-6fc7-422aa6c4b21f">
-    <mxGraphModel dx="1395" dy="909" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+    <mxGraphModel dx="988" dy="644" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="CqK5GXQSp2iezG7qc9yQ-13" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="b94bc138ca980ef-1" target="CqK5GXQSp2iezG7qc9yQ-2" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="b94bc138ca980ef-1" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ConsensusComponent&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ consensusMethod(Type): Type&lt;br&gt;+ method2(Type, Type): Type&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" parent="1" vertex="1">
-          <mxGeometry x="110" y="270" width="190" height="140" as="geometry" />
+        <mxCell id="b94bc138ca980ef-1" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ConsensusComponent&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ consensusMethod(): Blockchain&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" parent="1" vertex="1">
+          <mxGeometry x="110" y="270" width="190" height="80" as="geometry" />
         </mxCell>
         <mxCell id="CqK5GXQSp2iezG7qc9yQ-2" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Blockchain&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ firstBlock: Block&lt;br&gt;+ lastBlock: Block&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ createGenesisNode(): void&lt;br&gt;+ getChain(): Blockchain (this)&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
           <mxGeometry x="445" y="30" width="190" height="140" as="geometry" />
@@ -16,84 +16,75 @@
         <mxCell id="CqK5GXQSp2iezG7qc9yQ-8" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" parent="1" source="CqK5GXQSp2iezG7qc9yQ-5" target="CqK5GXQSp2iezG7qc9yQ-2" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="CqK5GXQSp2iezG7qc9yQ-5" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ProofComponent&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ proofMethod(Type): Type&lt;br&gt;+ method2(Type, Type): Type&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" parent="1" vertex="1">
-          <mxGeometry x="340" y="270" width="190" height="140" as="geometry" />
+        <mxCell id="CqK5GXQSp2iezG7qc9yQ-5" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ProofComponent&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ proofMethod()&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ validProof(): bool&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" parent="1" vertex="1">
+          <mxGeometry x="340" y="270" width="190" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="CqK5GXQSp2iezG7qc9yQ-10" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" parent="1" source="CqK5GXQSp2iezG7qc9yQ-6" target="CqK5GXQSp2iezG7qc9yQ-2" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="CqK5GXQSp2iezG7qc9yQ-6" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;CommunicationComponent&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ message: Message&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ getPeerChains(): Blockchain[]&lt;br&gt;+ pingNetwork(): void&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ receiveFromClient(): void&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ sendToClient(): void&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ receiveFromClient(): void&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ receiveFromClient(): void&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" parent="1" vertex="1">
-          <mxGeometry x="570" y="270" width="190" height="180" as="geometry" />
+        <mxCell id="CqK5GXQSp2iezG7qc9yQ-10" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" parent="1" source="3cCh1QjrxzrGFOsGR-2o-20" target="CqK5GXQSp2iezG7qc9yQ-2" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="665" y="260" as="sourcePoint" />
+          </mxGeometry>
         </mxCell>
         <mxCell id="CqK5GXQSp2iezG7qc9yQ-14" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="CqK5GXQSp2iezG7qc9yQ-7" target="CqK5GXQSp2iezG7qc9yQ-2" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="CqK5GXQSp2iezG7qc9yQ-7" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Block&lt;/b&gt;&lt;br&gt;Class&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ index: int&lt;br&gt;+ timestamp: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ data: Data&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ prevHash: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ hash: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ nonce: int&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ mine(): void&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
-          <mxGeometry x="800" y="270" width="190" height="180" as="geometry" />
+        <mxCell id="CqK5GXQSp2iezG7qc9yQ-7" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Block&lt;/b&gt;&lt;br&gt;Class&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ index: int&lt;br&gt;+ timestamp: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ data: Data&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ prevHash: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ hash: string&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ mine(): void&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+          <mxGeometry x="800" y="270" width="190" height="160" as="geometry" />
         </mxCell>
         <mxCell id="3cCh1QjrxzrGFOsGR-2o-4" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="CqK5GXQSp2iezG7qc9yQ-15" target="CqK5GXQSp2iezG7qc9yQ-7">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="CqK5GXQSp2iezG7qc9yQ-15" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Data&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ getData(Type): Data&lt;br&gt;+ toString/JSON(): string/JSON&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" parent="1" vertex="1">
-          <mxGeometry x="800" y="500" width="190" height="90" as="geometry" />
+          <mxGeometry x="800" y="480" width="190" height="90" as="geometry" />
         </mxCell>
         <mxCell id="3cCh1QjrxzrGFOsGR-2o-5" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="CqK5GXQSp2iezG7qc9yQ-17" target="CqK5GXQSp2iezG7qc9yQ-15">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="CqK5GXQSp2iezG7qc9yQ-17" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Transaction&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ from: string&lt;br&gt;+ to: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ amount: int&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ getData(): Data&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ toString/JSON(): string/JSON&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
-          <mxGeometry x="800" y="640" width="190" height="140" as="geometry" />
+          <mxGeometry x="800" y="620" width="190" height="140" as="geometry" />
         </mxCell>
         <mxCell id="CqK5GXQSp2iezG7qc9yQ-19" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
-          <mxGeometry x="890" y="610" width="80" height="20" as="geometry" />
-        </mxCell>
-        <mxCell id="3cCh1QjrxzrGFOsGR-2o-1" value="" style="endArrow=none;html=1;fillColor=#f5f5f5;strokeColor=#666666;" edge="1" parent="1" target="CqK5GXQSp2iezG7qc9yQ-6">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="570" y="339" as="sourcePoint" />
-            <mxPoint x="620" y="290" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="750" y="340" />
-            </Array>
-          </mxGeometry>
+          <mxGeometry x="890" y="590" width="80" height="20" as="geometry" />
         </mxCell>
         <mxCell id="3cCh1QjrxzrGFOsGR-2o-7" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="3cCh1QjrxzrGFOsGR-2o-2" target="CqK5GXQSp2iezG7qc9yQ-5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="3cCh1QjrxzrGFOsGR-2o-2" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ProofOfWork&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ from: string&lt;br&gt;+ To: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ amount: int&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ getData(Type): Data&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ toString/JSON(): string/JSON&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
-          <mxGeometry x="340" y="460" width="190" height="140" as="geometry" />
+        <mxCell id="3cCh1QjrxzrGFOsGR-2o-2" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ProofOfWork&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&amp;nbsp;+ nonce: int&lt;br&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ proofOfWork(lastProof int): int&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ validProof(lastProof int, &lt;br&gt;&amp;nbsp;&amp;nbsp; nonce int): bool&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="340" y="400" width="190" height="130" as="geometry" />
         </mxCell>
         <mxCell id="3cCh1QjrxzrGFOsGR-2o-8" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
-          <mxGeometry x="430" y="430" width="80" height="20" as="geometry" />
+          <mxGeometry x="430" y="370" width="80" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="3cCh1QjrxzrGFOsGR-2o-9" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="3cCh1QjrxzrGFOsGR-2o-10">
+        <mxCell id="3cCh1QjrxzrGFOsGR-2o-9" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="3cCh1QjrxzrGFOsGR-2o-10" target="b94bc138ca980ef-1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="205" y="410" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="3cCh1QjrxzrGFOsGR-2o-10" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;LongestChain&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ from: string&lt;br&gt;+ To: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ amount: int&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ getData(Type): Data&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ toString/JSON(): string/JSON&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
-          <mxGeometry x="110" y="460" width="190" height="140" as="geometry" />
+        <mxCell id="3cCh1QjrxzrGFOsGR-2o-10" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;LongestChain&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&amp;nbsp;+ peerChains: Blockchain[]&lt;br&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ consensusMethod(){&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; // getLongestChain()&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&amp;nbsp;&amp;nbsp; }&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="110" y="400" width="190" height="130" as="geometry" />
         </mxCell>
         <mxCell id="3cCh1QjrxzrGFOsGR-2o-11" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
-          <mxGeometry x="200" y="430" width="80" height="20" as="geometry" />
-        </mxCell>
-        <mxCell id="3cCh1QjrxzrGFOsGR-2o-12" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="3cCh1QjrxzrGFOsGR-2o-13">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="665" y="450" as="targetPoint" />
-          </mxGeometry>
+          <mxGeometry x="200" y="370" width="80" height="20" as="geometry" />
         </mxCell>
         <mxCell id="3cCh1QjrxzrGFOsGR-2o-19" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="3cCh1QjrxzrGFOsGR-2o-13" target="3cCh1QjrxzrGFOsGR-2o-16">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="3cCh1QjrxzrGFOsGR-2o-13" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Communicator&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ from: string&lt;br&gt;+ To: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ amount: int&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ getData(Type): Data&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ toString/JSON(): string/JSON&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
-          <mxGeometry x="570" y="500" width="190" height="140" as="geometry" />
+        <mxCell id="3cCh1QjrxzrGFOsGR-2o-28" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="3cCh1QjrxzrGFOsGR-2o-13" target="3cCh1QjrxzrGFOsGR-2o-20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3cCh1QjrxzrGFOsGR-2o-13" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Communicator&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Message {&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; command: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; message: string&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp; }&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ peerNodes: tuple[]&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ &amp;lt; Interface methods &amp;gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" vertex="1" parent="1">
+          <mxGeometry x="570" y="460" width="190" height="160" as="geometry" />
         </mxCell>
         <mxCell id="3cCh1QjrxzrGFOsGR-2o-14" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
-          <mxGeometry x="660" y="470" width="80" height="20" as="geometry" />
+          <mxGeometry x="660" y="425" width="80" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="3cCh1QjrxzrGFOsGR-2o-16" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ZeroConf&lt;/b&gt;&lt;br&gt;Library&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ from: string&lt;br&gt;+ To: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ amount: int&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ getData(Type): Data&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ toString/JSON(): string/JSON&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#cdeb8b;strokeColor=#36393d;" vertex="1" parent="1">
-          <mxGeometry x="570" y="690" width="190" height="140" as="geometry" />
+        <mxCell id="3cCh1QjrxzrGFOsGR-2o-16" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ZeroConf&lt;/b&gt;&lt;br&gt;Library&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#cdeb8b;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="570" y="670" width="190" height="70" as="geometry" />
         </mxCell>
         <mxCell id="3cCh1QjrxzrGFOsGR-2o-17" value="Utilizes" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
-          <mxGeometry x="670" y="660" width="50" height="20" as="geometry" />
+          <mxGeometry x="675" y="640" width="50" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="3cCh1QjrxzrGFOsGR-2o-20" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;CommunicationComponent&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ getPeerChains(): Blockchain[]&lt;br&gt;+ pingNetwork()&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ receiveFromClient(): Message&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ sendToClient()&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ receiveFromPeers(): Message&lt;/p&gt;&amp;nbsp;+ broadcastToPeers()&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" vertex="1" parent="1">
+          <mxGeometry x="570" y="270" width="190" height="140" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
