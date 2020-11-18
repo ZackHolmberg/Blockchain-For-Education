@@ -26,3 +26,10 @@
 
 - Started implementation of COMP 3010 material.
 
+## November 8th - November 21st
+
+- Refactored and finalized Blockchain formal design and high-level architecture.
+- Created Blockchain architectural diagram. Can be viewed [here](https://github.com/ZackHolmberg/Blockchain-Honours-Project/blob/main/Blockchain%20Architecture.pdf)
+- Re-approached implementation of COMP 3010 material based on new architecture.
+
+
