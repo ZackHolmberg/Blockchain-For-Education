@@ -12,8 +12,7 @@ func main() {
 	communicator := blockchain.Communicator{}
 	proofOfWork := blockchain.ProofOfWork{}
 	longestChain := blockchain.LongestChain{}
-	var blockchain = blockchain.Blockchain{CommunicationComponent: communicator, ProofComponent: proofOfWork, ConsensusComponent: longestChain, GenesisBlock: nil, Blockchain: nil}
-	blockchain.CreateGenesisBlock()
+	blockchain := blockchain.NewBlockchain(communicator, proofOfWork, longestChain)
 
 	fmt.Printf("\n%#v\n\n", blockchain)
 }

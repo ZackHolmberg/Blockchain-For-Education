@@ -37,9 +37,9 @@ type CommunicationComponent interface {
 }
 
 // NewBlockchain creates and returns a new Blockchain
-func NewBlockchain() Blockchain {
-	newBlockcain := Blockchain{}
-	//TODO: Implement
+func NewBlockchain(com CommunicationComponent, p ProofComponent, con ConsensusComponent) Blockchain {
+	newBlockcain := Blockchain{CommunicationComponent: com, ProofComponent: p, ConsensusComponent: con}
+	newBlockcain.CreateGenesisBlock()
 	return newBlockcain
 }
 
