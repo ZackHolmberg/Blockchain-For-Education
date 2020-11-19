@@ -14,5 +14,6 @@ func (l LongestChain) ConsensusMethod() {
 
 // longestChain uses the longestChain algorithm to achieve blockchain consensus amongst network
 func longestChain() int {
+	//TODO: Implement
 	return 0
 }

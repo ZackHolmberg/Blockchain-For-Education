@@ -11,15 +11,10 @@ type Block struct {
 	Hash      string
 }
 
-// Mine implements functionality to mine a new block to the chain
-func (b Block) Mine() {
-
-}
-
 // Data is an interface used to standardize methods for any type of Block data
 type Data interface {
-	GetData()
-	ToString()
+	GetData() Data
+	ToString() string
 }
 
 // Transaction is a type of Block data
@@ -30,11 +25,12 @@ type Transaction struct {
 }
 
 // GetData is the interface method that is required to retrieve Data object
-func (t Transaction) GetData() Transaction {
+func (t Transaction) GetData() Data {
 	return t
 }
 
 // ToString is the interface method that is required to transform the Data object into a string for communication
-func (t Transaction) ToString() {
-
+func (t Transaction) ToString() string {
+	//TODO: Implement
+	return "temp"
 }
