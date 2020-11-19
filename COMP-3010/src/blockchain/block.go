@@ -11,6 +11,7 @@ type Block struct {
 	Hash      string
 }
 
+// Mine implements functionality to mine a new block to the chain
 func (b Block) Mine() {
 
 }
@@ -28,8 +29,12 @@ type Transaction struct {
 	Amount int
 }
 
-func (t Transaction) GetData() {
+// GetData is the interface method that is required to retrieve Data object
+func (t Transaction) GetData() Transaction {
+	return t
 }
 
+// ToString is the interface method that is required to transform the Data object into a string for communication
 func (t Transaction) ToString() {
+
 }

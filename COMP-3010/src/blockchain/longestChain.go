@@ -2,20 +2,17 @@ package blockchain
 
 // ============================ Consensus ============================
 
-// ConsensusComponent standardizes methods for any Blockchain consensus component
-type ConsensusComponent interface {
-	ConsensusMethod()
-}
-
 // LongestChain algorithm used in Blockchain consensus
 type LongestChain struct {
 	PeerChains []Blockchain
 }
 
+// ConsensusMethod is the interface method that calls this component's consensus method, longestChain
 func (l LongestChain) ConsensusMethod() {
 	longestChain()
 }
 
+// longestChain uses the longestChain algorithm to achieve blockchain consensus amongst network
 func longestChain() int {
 	return 0
 }
