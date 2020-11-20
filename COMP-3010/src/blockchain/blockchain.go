@@ -36,14 +36,14 @@ type CommunicationComponent interface {
 	BroadcastToNetwork()
 }
 
-// NewBlockchain creates and returns a new Blockchain
+// NewBlockchain creates and returns a new Blockchain, with the Genesis Block initialized
 func NewBlockchain(com CommunicationComponent, p ProofComponent, con ConsensusComponent) Blockchain {
 	newBlockcain := Blockchain{CommunicationComponent: com, ProofComponent: p, ConsensusComponent: con}
 	newBlockcain.CreateGenesisBlock()
 	return newBlockcain
 }
 
-// CreateGenesisBlock add the genesis block to the blockchain
+// CreateGenesisBlock initializes and adds a genesis block to the blockchain
 func (b *Blockchain) CreateGenesisBlock() {
 
 	genesisBlock := Block{}

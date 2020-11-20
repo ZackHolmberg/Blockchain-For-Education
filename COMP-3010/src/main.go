@@ -16,3 +16,8 @@ func main() {
 
 	fmt.Printf("\n%#v\n\n", blockchain)
 }
+
+// --- Misc. Notes ---
+// Add a makefile
+// Middleware/MessageHandler Proxy on the network that students send HTTPS requests to, which it then transalates
+// to seomething readable by the peers on the network and broadcasts
