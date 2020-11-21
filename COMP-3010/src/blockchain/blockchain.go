@@ -18,8 +18,8 @@ type Blockchain struct {
 //ProofComponent standardizes methods for any Blockchain proof component
 type ProofComponent interface {
 	CalculateHash(nonce int, block Block) string
-	ProofMethod()
-	ValidateProof() bool
+	ProofMethod(b Block) string
+	ValidateProof(s string) bool
 }
 
 // ConsensusComponent standardizes methods for any Blockchain consensus component
@@ -55,6 +55,11 @@ func (b *Blockchain) CreateGenesisBlock() {
 
 	b.GenesisBlock = &genesisBlock
 	b.Blockchain = append(b.Blockchain, genesisBlock)
+}
+
+// GetChain returns this Blockchains current chain
+func (b *Blockchain) GetChain() []Block {
+	return b.Blockchain
 }
 
 // Mine implements functionality to mine a new block to the chain

@@ -10,11 +10,14 @@ import (
 func main() {
 
 	communicator := blockchain.Communicator{}
-	proofOfWork := blockchain.ProofOfWork{}
+	proofOfWork := blockchain.ProofOfWork{ProofDifficulty: 3}
 	longestChain := blockchain.LongestChain{}
 	blockchain := blockchain.NewBlockchain(communicator, proofOfWork, longestChain)
 
 	fmt.Printf("\n%#v\n\n", blockchain)
+	// hash := proofOfWork.ProofMethod(*blockchain.GenesisBlock)
+	// fmt.Printf("\nHash: %#v\n\n", hash)
+
 }
 
 // --- Misc. Notes ---
