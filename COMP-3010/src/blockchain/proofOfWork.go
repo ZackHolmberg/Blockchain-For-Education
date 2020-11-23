@@ -3,7 +3,6 @@ package blockchain
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -36,7 +35,6 @@ func (p ProofOfWork) ValidateProof(proofAttempt string) bool {
 	if len(proofAttempt) < p.ProofDifficulty {
 		return false
 	}
-	fmt.Printf("Looking at: %#v\n", proofAttempt)
 	return proofAttempt[:p.ProofDifficulty] == strings.Repeat("0", p.ProofDifficulty)
 }
 

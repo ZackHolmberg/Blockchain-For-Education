@@ -50,8 +50,8 @@ func (b *Blockchain) CreateGenesisBlock() {
 	genesisBlock.Index = 0
 	genesisBlock.Timestamp = time.Now().String()
 	genesisBlock.Data = Transaction{}
-	genesisBlock.PrevHash = "0"
-	genesisBlock.Hash = b.ProofComponent.CalculateHash(0, genesisBlock)
+	genesisBlock.PrevHash = ""
+	genesisBlock.Hash = b.ProofComponent.ProofMethod(genesisBlock)
 
 	b.GenesisBlock = &genesisBlock
 	b.Blockchain = append(b.Blockchain, genesisBlock)
@@ -63,6 +63,24 @@ func (b *Blockchain) GetChain() []Block {
 }
 
 // Mine implements functionality to mine a new block to the chain
-func (b *Blockchain) Mine(block Block) {
-	//TODO: Implement
+func (b *Blockchain) Mine(data Data) {
+
+	//Create a new block
+	newBlock := Block{
+		Index:     len(b.Blockchain),
+		Timestamp: time.Now().String(),
+		Data:      data,
+		PrevHash:  b.Blockchain[len(b.Blockchain)-1].Hash,
+		Hash:      ""}
+
+	//Calculate this block's proof
+	newBlock.Hash = b.ProofComponent.ProofMethod(newBlock)
+
+	//Add the new block to the chain
+	b.Blockchain = append(b.Blockchain, newBlock)
 }
+
+// TODO: Consider a blockchian clean up function when program ends.
+// 	     Would call the each components clean up and exit function,
+//       if there is a need for such functions. These would be
+//       interface-defined functions.

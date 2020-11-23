@@ -1,5 +1,10 @@
 package blockchain
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 // ============================ Block ============================
 
 // Block is the Block object
@@ -31,6 +36,10 @@ func (t Transaction) GetData() Data {
 
 // ToString is the interface method that is required to transform the Data object into a string for communication
 func (t Transaction) ToString() string {
-	//TODO: Implement
-	return "temp"
+	b, err := json.Marshal(t)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return string(b)
 }

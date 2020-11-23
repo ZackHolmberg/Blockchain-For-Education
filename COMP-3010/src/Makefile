@@ -1,6 +1,7 @@
 GO=go
 BUILD=$(GO) build
 TEST=$(GO) test
+CLEAN=$(GO) clean
 BINARY=executable
     
 all: test build
@@ -12,6 +13,9 @@ build:
 	@$(BUILD) -o $(BINARY) -v
 test: 
 	@$(TEST) -v
+clean:
+	@$(CLEAN)
+	@rm -f $(BINARY)
 run:
 	@echo "\nBuilding executable...\n"
 	@cd blockchain
@@ -22,4 +26,3 @@ run:
 	@./$(BINARY)
 	@$(CLEAN)
 	@rm -f $(BINARY)
-
