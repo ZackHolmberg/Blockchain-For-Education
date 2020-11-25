@@ -13,8 +13,11 @@ import (
 
 // Communicator implements CommunicationsComponent and facilities Blockchain communication
 type Communicator struct {
-	peer      *zeroconf.Server
-	peerNodes []string
+	peer          *zeroconf.Server
+	peerNodes     []string
+	peerMessage   chan string
+	clientMessage chan string
+	//Not sure if clientMessage will be necessary, not sure how to best handle receiving new transactions from client/messageQueue
 }
 
 // GetPeerChains is the interface method that retrieves the copy of the blockchain from every peer on the network
@@ -22,22 +25,26 @@ func (c Communicator) GetPeerChains() {
 	//TODO: Implement
 }
 
-// RecieveFromClient is the interface method that
+// RecieveFromClient is the interface method that receives messages
+// from the client (MIGHT NOT BE NECESSARY)
 func (c Communicator) RecieveFromClient() {
 	//TODO: Implement
 }
 
-// SendToClient is the interface method that
+// SendToClient is the interface method that sends messages
+// to the client (MIGHT NOT BE NECESSARY)
 func (c Communicator) SendToClient() {
 	//TODO: Implement
 }
 
 // RecieveFromNetwork is the interface method that
+// receives UDP message from peers on the network
 func (c Communicator) RecieveFromNetwork() {
 	//TODO: Implement
 }
 
-// BroadcastToNetwork is the interface method that
+// BroadcastToNetwork is the interface method that uses
+// UDP to broadcast a message to all the peers on the network
 func (c Communicator) BroadcastToNetwork() {
 	//TODO: Implement
 }
@@ -90,6 +97,11 @@ func (c *Communicator) initializeCommunicator(name string, service string, domai
 
 	//Set this Communicator's service reference to the newly created service
 	c.peer = peer
+
+	// ============== TODO ==============
+	// When a service/peer connects to the network (for the first time I'd think), it needs
+	// to run consensus so that it only creates a genesis node if its the first node on the network
+	// Otherwise, we dont want to generate a genesis node but instead "download" a copy of the current chain
 }
 
 func discoverServices() {
@@ -102,7 +114,7 @@ func discoverServices() {
 	entries := make(chan *zeroconf.ServiceEntry)
 	go func(results <-chan *zeroconf.ServiceEntry) {
 		for entry := range results {
-			log.Println(entry)
+			log.Println("\n\n", entry, "\n")
 		}
 		log.Println("No more entries.")
 	}(entries)

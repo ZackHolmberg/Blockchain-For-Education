@@ -8,10 +8,11 @@ import (
 	"os/exec"
 )
 
-// ============================ Main ============================
+var communicator blockchain.Communicator
+var proofOfWork blockchain.ProofOfWork
+var longestChain blockchain.LongestChain
 
-func main() {
-
+func init() {
 	serviceName, err := os.Hostname()
 	if err != nil {
 		fmt.Println(err)
@@ -21,9 +22,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	communicator := blockchain.NewCommunicator(fmt.Sprintf("%s-%s", serviceName, out), "_blockchain-P2P-Network._udp", "local.", 42424)
-	proofOfWork := blockchain.ProofOfWork{ProofDifficulty: 4}
-	longestChain := blockchain.LongestChain{}
+
+	//>>> TODO: Each node needs a unique port or host. Can't be same host and port. How to assign an unused port dynamically?
+	communicator = blockchain.NewCommunicator(fmt.Sprintf("%s-%s", serviceName, out), "_blockchain-P2P-Network._udp", "local.", 42424)
+	proofOfWork = blockchain.ProofOfWork{ProofDifficulty: 4}
+	longestChain = blockchain.LongestChain{}
+}
+
+// ============================ Main ============================
+
+func main() {
+
 	bc := blockchain.NewBlockchain(communicator, proofOfWork, longestChain)
 
 	fmt.Printf("\nThe Blockchain: \n%#v\n\n", bc)

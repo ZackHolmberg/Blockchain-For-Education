@@ -80,7 +80,7 @@ func (b *Blockchain) Mine(data Data) {
 	b.Blockchain = append(b.Blockchain, newBlock)
 }
 
-// TODO: Consider a blockchian clean up function when program ends.
+// TODO: Consider a blockchain clean up function when program ends.
 // 	     Would call the each components clean up and exit function,
 //       if there is a need for such functions. These would be
 //       interface-defined functions.
