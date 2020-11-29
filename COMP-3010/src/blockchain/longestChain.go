@@ -7,6 +7,10 @@ type LongestChain struct {
 	PeerChains []Blockchain
 }
 
+// TerminateConsensusComponent is the interface method that calls this component's cleanup method
+func (l LongestChain) TerminateConsensusComponent() {
+}
+
 // ConsensusMethod is the interface method that calls this component's consensus method, longestChain
 func (l LongestChain) ConsensusMethod() {
 	longestChain()

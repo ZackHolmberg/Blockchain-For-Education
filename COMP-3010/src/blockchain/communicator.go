@@ -20,14 +20,21 @@ import (
 type Communicator struct {
 	self        *zeroconf.Server
 	socket      *net.UDPConn
-	peerNodes   []net.UDPAddr
+	peerNodes   []Peer
 	peerMessage chan string
 }
 
-// Message is an Interface defined struct, used to marshal/demarshal messages
+// Message is the struct that is marshalled/demarshalled between peers to communicate
 type Message struct {
+	from    Peer
 	command string
 	data    Data
+}
+
+// Peer represents a peer on the network and contains metadata about that peer
+type Peer struct {
+	address     net.UDPAddr
+	lastMessage time.Time
 }
 
 // GetPeerChains is the interface method that retrieves the copy of the blockchain from every peer on the network
@@ -42,7 +49,9 @@ func (c Communicator) GetPeerChains() {
 func (c Communicator) RecieveFromNetwork() (Message, error) {
 
 	buf := make([]byte, 2048)
-	_, remoteaddr, err := c.socket.ReadFromUDP(buf)
+
+	// Read from the socket
+	_, _, err := c.socket.ReadFromUDP(buf)
 	if err != nil {
 		fmt.Printf("Error reading from socket: %v", err)
 		return Message{}, err
@@ -50,13 +59,21 @@ func (c Communicator) RecieveFromNetwork() (Message, error) {
 
 	var message Message
 
+	// Unmarshal the JSON into a Message
 	err = json.Unmarshal(buf, &message)
 	if err != nil {
 		fmt.Printf("Error unmarshalling message: %v", err)
 		return Message{}, err
 	}
 
-	fmt.Printf("Read message :%+v from: %+v  \n", message, remoteaddr)
+	// This removes the need to have a HandlePingFromNetwork function
+	// Resets the peer's lastMessage timer
+	message.from.lastMessage = time.Now()
+
+	// If the peer that sent the message is not a known peer, add it to the peerNodes list
+	if !knownPeer(c.peerNodes, message.from) {
+		c.peerNodes = append(c.peerNodes, message.from)
+	}
 
 	return message, nil
 }
@@ -74,14 +91,14 @@ func (c Communicator) BroadcastToNetwork(msg Message) {
 
 	// Send the message to each known peer node
 	for _, peer := range c.peerNodes {
-		_, err := c.socket.WriteToUDP(endcodedMessage, &peer)
+		_, err := c.socket.WriteToUDP(endcodedMessage, &peer.address)
 		if err != nil {
 			fmt.Printf("Couldn't send message to peer %v", err)
 		}
 	}
 }
 
-// PingNetwork is the interface method that senda a ping to all known peer nodes
+// PingNetwork is the interface method that sends a ping to all known peer nodes
 func (c Communicator) PingNetwork() {
 
 	// Initialize the ping message to broadcast to peers on the network
@@ -89,24 +106,6 @@ func (c Communicator) PingNetwork() {
 
 	// call BroadcastToNetwork to broadcast ping message
 	c.BroadcastToNetwork(pingMessage)
-}
-
-// HandlePingFromNetwork is the interface method that
-func (c Communicator) HandlePingFromNetwork() {
-	// TODO: If the ping is already from a node within peerNodes, refresh its timer
-	// If not, add it to the list of knownPeer nodes
-}
-
-// TerminateCommunicator cleans up and terminates the service
-func (c Communicator) TerminateCommunicator() {
-
-	fmt.Println("Terminating service...")
-
-	//Shutdown self service instance
-	c.self.Shutdown()
-
-	//Close the socket
-	c.socket.Close()
 }
 
 // InitializeCommunicator initializes a new communicator by initializing
@@ -124,7 +123,24 @@ func (c *Communicator) InitializeCommunicator() {
 
 }
 
+// TerminateCommunicationComponent is the interface method that calls this component's cleanup method
+func (c Communicator) TerminateCommunicationComponent() {
+	c.terminateCommunicator()
+}
+
 // == Non-interface methods ==
+
+// terminateCommunicator cleans up and terminates this peer's socket and service
+func (c Communicator) terminateCommunicator() {
+
+	fmt.Println("Terminating communicator...")
+
+	//Shutdown self service instance
+	c.self.Shutdown()
+
+	//Close the socket
+	c.socket.Close()
+}
 
 func initializeSocket() *net.UDPConn {
 	//Dynamically get an unused port assigned by opening a socket with port set to 0
@@ -184,7 +200,7 @@ func initializeService(port int) *zeroconf.Server {
 	return self
 }
 
-func discoverPeers() []net.UDPAddr {
+func discoverPeers() []Peer {
 	// Discover all services on the '_blockchain-P2P-Network._udp' blockchain network
 	resolver, err := zeroconf.NewResolver(nil)
 	if err != nil {
@@ -192,15 +208,15 @@ func discoverPeers() []net.UDPAddr {
 		return nil
 	}
 
-	newPeerNodes := []net.UDPAddr{}
+	newPeerNodes := []Peer{}
 
 	entries := make(chan *zeroconf.ServiceEntry)
 	go func(results <-chan *zeroconf.ServiceEntry) {
 		//For all peers found on the network
 		for entry := range results {
 
-			newPeer := net.UDPAddr{IP: entry.AddrIPv4[0], Port: entry.Port, Zone: ""}
-
+			newAddr := net.UDPAddr{IP: entry.AddrIPv4[0], Port: entry.Port, Zone: ""}
+			newPeer := Peer{address: newAddr, lastMessage: time.Now()}
 			// Append the new peer to the Communicator's list of known peer nodes
 			newPeerNodes = append(newPeerNodes, newPeer)
 		}
@@ -221,4 +237,15 @@ func discoverPeers() []net.UDPAddr {
 	fmt.Printf("Discovered peer nodes: %+v\n", newPeerNodes)
 
 	return newPeerNodes
+}
+
+// knownPeer takes a slice of peers and looks for a particular peer in it. If found it will
+// return true, otherwise it will return false.
+func knownPeer(slice []Peer, p Peer) bool {
+	for _, c := range slice {
+		if c.address.IP.String() == p.address.IP.String() && c.address.Port == p.address.Port {
+			return true
+		}
+	}
+	return false
 }

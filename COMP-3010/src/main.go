@@ -21,20 +21,16 @@ func init() {
 func main() {
 
 	bc := blockchain.NewBlockchain(communicator, proofOfWork, longestChain)
-	bc.Run()
-
 	fmt.Printf("\nThe Blockchain: \n%#v\n\n", bc)
+
+	// bc.Run()
+
 	// hash := proofOfWork.ProofMethod(*bc.GenesisBlock)
 	// fmt.Printf("\nHash: %#v\n\n", hash)
 
 	// transaction := blockchain.Transaction{From: "John", To: "Doe", Amount: 42}
 	// bc.Mine(transaction)
 	// fmt.Printf("\nThe Blockchain after mining: \n%#v\n\n", bc)
-
-	//Consider whether this should be apart of a cleanupBlockchain function, or maybe a golang defer func?
-	for true {
-	}
-	communicator.TerminateCommunicator()
 
 }
 

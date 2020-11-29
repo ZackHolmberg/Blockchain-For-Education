@@ -1,24 +1,30 @@
 package blockchain
 
 import (
+	"fmt"
 	"time"
 )
 
 // ============================ Blockchain ============================
 
-//TODO: Could have a Blockchain interface with following methods:
-// - Mine()
-// - GetChain()
-// - CreateGenesisNode()
-// - Run()
+// Interface defines required methods of any Blockchain implementation
+type Interface interface {
+	NewBlockchain()
+	Run()
+
+	mine()
+	getChain()
+	createGenesisNode()
+	terminate()
+}
 
 // Blockchain is the Blockchain object
 type Blockchain struct {
-	CommunicationComponent CommunicationComponent
-	ProofComponent         ProofComponent
-	ConsensusComponent     ConsensusComponent
-	GenesisBlock           *Block
-	Blockchain             []Block
+	communicationComponent CommunicationComponent
+	proofComponent         ProofComponent
+	consensusComponent     ConsensusComponent
+	genesisBlock           *Block
+	blockchain             []Block
 }
 
 //ProofComponent standardizes methods for any Blockchain proof component
@@ -26,11 +32,13 @@ type ProofComponent interface {
 	CalculateHash(nonce int, block Block) string
 	ProofMethod(b Block) string
 	ValidateProof(s string) bool
+	TerminateProofComponent()
 }
 
 // ConsensusComponent standardizes methods for any Blockchain consensus component
 type ConsensusComponent interface {
 	ConsensusMethod()
+	TerminateConsensusComponent()
 }
 
 // CommunicationComponent standardizes methods for any Blockchain communcation component
@@ -40,14 +48,14 @@ type CommunicationComponent interface {
 	RecieveFromNetwork() (Message, error)
 	BroadcastToNetwork(msg Message)
 	PingNetwork()
-	HandlePingFromNetwork()
+	TerminateCommunicationComponent()
 }
 
 // NewBlockchain creates and returns a new Blockchain, with the Genesis Block initialized
 func NewBlockchain(com CommunicationComponent, p ProofComponent, con ConsensusComponent) Blockchain {
 
 	// Initialize a new Blockchain with the passed componenet values
-	newBlockcain := Blockchain{CommunicationComponent: com, ProofComponent: p, ConsensusComponent: con}
+	newBlockcain := Blockchain{communicationComponent: com, proofComponent: p, consensusComponent: con}
 
 	// Initialize the communication component
 	com.InitializeCommunicator()
@@ -59,58 +67,94 @@ func NewBlockchain(com CommunicationComponent, p ProofComponent, con ConsensusCo
 	con.ConsensusMethod()
 
 	// If the chain is empty after consensus, then this peer is the first node on the network
-	if len(newBlockcain.Blockchain) == 0 {
+	if len(newBlockcain.blockchain) == 0 {
 		// Initialize the chain by creating the genesis block
-		newBlockcain.CreateGenesisBlock()
+		newBlockcain.createGenesisBlock()
 	}
 
 	return newBlockcain
 }
 
-// CreateGenesisBlock initializes and adds a genesis block to the blockchain
-func (b *Blockchain) CreateGenesisBlock() {
+// createGenesisBlock initializes and adds a genesis block to the blockchain
+func (b *Blockchain) createGenesisBlock() {
 
 	genesisBlock := Block{}
 	genesisBlock.Index = 0
 	genesisBlock.Timestamp = time.Now().String()
 	genesisBlock.Data = Transaction{}
 	genesisBlock.PrevHash = ""
-	genesisBlock.Hash = b.ProofComponent.ProofMethod(genesisBlock)
+	genesisBlock.Hash = b.proofComponent.ProofMethod(genesisBlock)
 
-	b.GenesisBlock = &genesisBlock
-	b.Blockchain = append(b.Blockchain, genesisBlock)
+	b.genesisBlock = &genesisBlock
+	b.blockchain = append(b.blockchain, genesisBlock)
 }
 
-// GetChain returns this Blockchains current chain
-func (b *Blockchain) GetChain() []Block {
-	return b.Blockchain
+// getChain returns this Blockchains current chain
+func (b *Blockchain) getChain() []Block {
+	return b.blockchain
 }
 
-// Mine implements functionality to mine a new block to the chain
-func (b *Blockchain) Mine(data Data) {
+// mine implements functionality to mine a new block to the chain
+func (b *Blockchain) mine(data Data) {
 
 	//Create a new block
 	newBlock := Block{
-		Index:     len(b.Blockchain),
+		Index:     len(b.blockchain),
 		Timestamp: time.Now().String(),
 		Data:      data,
-		PrevHash:  b.Blockchain[len(b.Blockchain)-1].Hash,
+		PrevHash:  b.blockchain[len(b.blockchain)-1].Hash,
 		Hash:      ""}
 
 	//Calculate this block's proof
-	newBlock.Hash = b.ProofComponent.ProofMethod(newBlock)
+	newBlock.Hash = b.proofComponent.ProofMethod(newBlock)
 
 	//Add the new block to the chain
-	b.Blockchain = append(b.Blockchain, newBlock)
+	b.blockchain = append(b.blockchain, newBlock)
 }
 
 // Run uses the 3 blockchain components to run this blockchain peer by sending/recieving
 // requests and messages on the p2p network
 func (b Blockchain) Run() {
 
+	//When Run() concludes, terminate() will be called to clean up the different Blockchain components
+	defer b.terminate()
+
+	b.communicationComponent.PingNetwork()
+	var lastPing = time.Now()
+
+	for {
+		msg, err := b.communicationComponent.RecieveFromNetwork()
+		if err != nil {
+
+			fmt.Printf("Error receiving from network: %v", err)
+
+			// continue forces the program to enter the next iteration of
+			// the loop, skipping all code in the remainder of the loop
+			continue
+		}
+
+		switch msg.command {
+		case "PING":
+			go fmt.Printf("Recieved a ping from %#v\n", msg.from)
+		default:
+			go fmt.Println("Warning - Command \"" + msg.command + "\" not supported")
+		}
+
+		// Ping all peer nodes on the network once every minute
+		if time.Since(lastPing).Minutes() >= 1 {
+			go b.communicationComponent.PingNetwork()
+			lastPing = time.Now()
+		}
+
+		// If this peer hasn't received a message from another peer for 75 seconds,
+		// then remove that peer from the list of known nodes
+
+	}
 }
 
-// TODO: Consider a blockchain clean up function when program ends.
-// 	     Would call the each components clean up and exit function,
-//       if there is a need for such functions. These would be
-//       interface-defined functions.
+// terminate calls all of the interface-defined component clean-up methods
+func (b Blockchain) terminate() {
+	b.communicationComponent.TerminateCommunicationComponent()
+	b.proofComponent.TerminateProofComponent()
+	b.consensusComponent.TerminateConsensusComponent()
+}

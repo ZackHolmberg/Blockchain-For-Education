@@ -14,6 +14,10 @@ type ProofOfWork struct {
 	ProofDifficulty int
 }
 
+// TerminateProofComponent is the interface method that calls this component's cleanup method
+func (p ProofOfWork) TerminateProofComponent() {
+}
+
 // ProofMethod is the interface method that calls this component's proof method
 func (p ProofOfWork) ProofMethod(b Block) string {
 	return proofOfWork(p, b)
