@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -45,9 +46,10 @@ type ConsensusComponent interface {
 type CommunicationComponent interface {
 	InitializeCommunicator()
 	GetPeerChains()
-	RecieveFromNetwork() (Message, error)
+	RecieveFromNetwork()
 	BroadcastToNetwork(msg Message)
 	PingNetwork()
+	GetMessageChannel() chan Message
 	TerminateCommunicationComponent()
 }
 
@@ -55,24 +57,21 @@ type CommunicationComponent interface {
 func NewBlockchain(com CommunicationComponent, p ProofComponent, con ConsensusComponent) Blockchain {
 
 	// Initialize a new Blockchain with the passed componenet values
-	newBlockcain := Blockchain{communicationComponent: com, proofComponent: p, consensusComponent: con}
+	newBlockchain := Blockchain{communicationComponent: com, proofComponent: p, consensusComponent: con}
 
 	// Initialize the communication component
 	com.InitializeCommunicator()
-
-	// Ping the network so that this new peer is discovered by all existing peers
-	com.PingNetwork()
 
 	// Run consensus to get latest copy of the chain from the network
 	con.ConsensusMethod()
 
 	// If the chain is empty after consensus, then this peer is the first node on the network
-	if len(newBlockcain.blockchain) == 0 {
+	if len(newBlockchain.blockchain) == 0 {
 		// Initialize the chain by creating the genesis block
-		newBlockcain.createGenesisBlock()
+		newBlockchain.createGenesisBlock()
 	}
 
-	return newBlockcain
+	return newBlockchain
 }
 
 // createGenesisBlock initializes and adds a genesis block to the blockchain
@@ -119,42 +118,51 @@ func (b Blockchain) Run() {
 	//When Run() concludes, terminate() will be called to clean up the different Blockchain components
 	defer b.terminate()
 
-	b.communicationComponent.PingNetwork()
 	var lastPing = time.Now()
 
+	fmt.Println("\nRunning Blockchain...")
+	fmt.Println()
+
 	for {
-		msg, err := b.communicationComponent.RecieveFromNetwork()
-		if err != nil {
 
-			fmt.Printf("Error receiving from network: %v", err)
+		go b.communicationComponent.RecieveFromNetwork()
 
-			// continue forces the program to enter the next iteration of
-			// the loop, skipping all code in the remainder of the loop
-			continue
-		}
-
-		switch msg.command {
-		case "PING":
-			go fmt.Printf("Recieved a ping from %#v\n", msg.from)
+		select {
+		case peerMsg := <-b.communicationComponent.GetMessageChannel():
+			switch peerMsg.Command {
+			case "PING":
+				go log.Printf("Recieved a ping from %s:%d\n", peerMsg.From.Address.IP.String(), peerMsg.From.Address.Port)
+			default:
+				go log.Println("Warning: Command \"" + peerMsg.Command + "\" not supported")
+			}
 		default:
-			go fmt.Println("Warning - Command \"" + msg.command + "\" not supported")
+			// Ping all peer nodes on the network once every minute
+			// if time.Since(lastPing).Minutes() >= 1 {
+			if time.Since(lastPing).Seconds() >= 5 {
+				go b.communicationComponent.PingNetwork()
+				lastPing = time.Now()
+			}
 		}
 
-		// Ping all peer nodes on the network once every minute
-		if time.Since(lastPing).Minutes() >= 1 {
-			go b.communicationComponent.PingNetwork()
-			lastPing = time.Now()
-		}
+		time.Sleep(1 * time.Millisecond)
 
-		// If this peer hasn't received a message from another peer for 75 seconds,
+		// TODO: If this peer hasn't received a message from another peer for 75 seconds,
 		// then remove that peer from the list of known nodes
+
+		// TODO: Need to set a handler/listener in here to catch ctrl+c quitting, which calls exits this loop
+		// so that terminate can run
 
 	}
 }
 
 // terminate calls all of the interface-defined component clean-up methods
 func (b Blockchain) terminate() {
+	fmt.Println("Terminating Blockchain components...")
+
 	b.communicationComponent.TerminateCommunicationComponent()
 	b.proofComponent.TerminateProofComponent()
 	b.consensusComponent.TerminateConsensusComponent()
+
+	fmt.Println("Exiting...")
+
 }

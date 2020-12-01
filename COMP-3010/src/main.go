@@ -2,7 +2,6 @@ package main
 
 import (
 	"blockchain"
-	"fmt"
 )
 
 var communicator *blockchain.Communicator
@@ -12,7 +11,7 @@ var longestChain blockchain.LongestChain
 func init() {
 
 	communicator = &blockchain.Communicator{}
-	proofOfWork = blockchain.ProofOfWork{ProofDifficulty: 4}
+	proofOfWork = blockchain.ProofOfWork{ProofDifficulty: 2}
 	longestChain = blockchain.LongestChain{}
 }
 
@@ -21,9 +20,9 @@ func init() {
 func main() {
 
 	bc := blockchain.NewBlockchain(communicator, proofOfWork, longestChain)
-	fmt.Printf("\nThe Blockchain: \n%#v\n\n", bc)
+	// fmt.Printf("\nThe Blockchain: \n%#v\n\n", bc)
 
-	// bc.Run()
+	bc.Run()
 
 	// hash := proofOfWork.ProofMethod(*bc.GenesisBlock)
 	// fmt.Printf("\nHash: %#v\n\n", hash)

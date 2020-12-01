@@ -32,4 +32,11 @@
 - Created Blockchain architectural diagram. Can be viewed [here](https://github.com/ZackHolmberg/Blockchain-Honours-Project/blob/main/Blockchain%20Architecture.pdf)
 - Re-approached implementation of COMP 3010 material based on new architecture.
 
+## November 22nd - December 5th
 
+- Continued development of project material:
+  - Implemented the various blockchain component functionality
+  - Implemented the middleware to handle message between server and client
+  - Implemented the blockchain transaction client
+
+## December 6th - November 19th
