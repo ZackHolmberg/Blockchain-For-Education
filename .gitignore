@@ -1,4 +1,5 @@
 **/pkg
 **/github.com
 **/golang.org
-executable
+src
+!src/

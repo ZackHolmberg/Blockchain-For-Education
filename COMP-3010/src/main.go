@@ -2,6 +2,8 @@ package main
 
 import (
 	"blockchain"
+	"fmt"
+	"sync"
 )
 
 var communicator *blockchain.Communicator
@@ -19,10 +21,23 @@ func init() {
 
 func main() {
 
-	bc := blockchain.NewBlockchain(communicator, proofOfWork, longestChain)
-	// fmt.Printf("\nThe Blockchain: \n%#v\n\n", bc)
+	wg := new(sync.WaitGroup)
 
-	bc.Run()
+	// start middleware
+	fmt.Println("\nStarting Middleware...")
+	m := blockchain.NewMiddleware(communicator)
+	wg.Add(1)
+	go m.Run(wg)
+	// time.Sleep(5 * time.Second)
+
+	// // start blockchain
+	// fmt.Println("\nStarting Blockchain...")
+	// bc := blockchain.NewBlockchain(communicator, proofOfWork, longestChain)
+	// // fmt.Printf("\nThe Blockchain: \n%#v\n\n", bc)
+	// wg.Add(1)
+	// go bc.Run(wg)
+
+	wg.Wait()
 
 	// hash := proofOfWork.ProofMethod(*bc.GenesisBlock)
 	// fmt.Printf("\nHash: %#v\n\n", hash)
