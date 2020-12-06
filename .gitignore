@@ -3,3 +3,5 @@
 **/golang.org
 src
 !src/
+peerBinary
+middlewareBinary
