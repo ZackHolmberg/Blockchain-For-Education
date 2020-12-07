@@ -5,24 +5,23 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 )
 
 // ============================ Blockchain ============================
 
-// Interface defines required methods of any Blockchain implementation
-type Interface interface {
-	NewBlockchain()
+// Node defines required methods of any Blockchain Node implementation
+type Node interface {
+	NewBlockchain(com CommunicationComponent, p ProofComponent, con ConsensusComponent) *Node
 	Run()
 
-	initialize()
+	initialize() error
 	mine()
 	getChain()
 	createGenesisNode()
 	terminate()
-	initializeComponents()
+	initializeComponents() error
 }
 
 // Blockchain is the Blockchain object
@@ -39,62 +38,72 @@ type ProofComponent interface {
 	CalculateHash(nonce int, block Block) string
 	ProofMethod(b Block) string
 	ValidateProof(s string) bool
-	Initialize()
+	Initialize() error
 	Terminate()
 }
 
 // ConsensusComponent standardizes methods for any Blockchain consensus component
 type ConsensusComponent interface {
-	ConsensusMethod()
-	Initialize()
+	ConsensusMethod() error
+	Initialize() error
 	Terminate()
 }
 
 // CommunicationComponent standardizes methods for any Blockchain communcation component
 type CommunicationComponent interface {
-	Initialize()
-	InitializeWithPort(port int)
+	Initialize() error
+	InitializeWithPort(port int) error
 	GetPeerChains()
-	RecieveFromNetwork()
-	BroadcastToNetwork(msg Message)
-	PingNetwork()
+	RecieveFromNetwork() error
+	BroadcastToNetwork(msg Message) error
+	PingNetwork() error
+	GenerateMessage(cmd string, data Data) (Message, error)
 	GetMessageChannel() chan Message
 	Terminate()
 	PrunePeerNodes()
 }
 
 // NewBlockchain creates and returns a new Blockchain, with the Genesis Block and Components initialized
-func NewBlockchain(com CommunicationComponent, p ProofComponent, con ConsensusComponent) Blockchain {
+func NewBlockchain(com CommunicationComponent, p ProofComponent, con ConsensusComponent) (Blockchain, error) {
 
 	// Define a new Blockchain with the passed componenet values
 	newBlockchain := Blockchain{communicationComponent: com, proofComponent: p, consensusComponent: con}
 
 	// Initialize the Blockchain
-	newBlockchain.initialize()
+	err := newBlockchain.initialize()
 
-	return newBlockchain
+	// If there was an error initializing the Blockchain peer
+	if err != nil {
+		fmt.Printf("Error initializing Blockchain peer: %#v", err)
+		newBlockchain.terminate()
+		return Blockchain{}, nil
+	}
+
+	return newBlockchain, nil
 }
 
 // Initialize initializes the Blockchain by initializing its components and serving itself on the network
-func (b *Blockchain) initialize() {
+func (b *Blockchain) initialize() error {
 
-	// Initialize the communication component
-	b.communicationComponent.Initialize()
-
-	// Initialize the consensus component
-	b.consensusComponent.Initialize()
-
-	// Initialize the proof component
-	b.proofComponent.Initialize()
+	// Initialize Blockchain peer components
+	err := b.initializeComponents()
 
 	// Run consensus to get latest copy of the chain from the network
-	b.consensusComponent.ConsensusMethod()
+	err = b.consensusComponent.ConsensusMethod()
+
+	// If there was an error initializing one of the components
+	if err != nil {
+		fmt.Printf("Error initializing Blockchain peer: %#v", err)
+		return err
+	}
 
 	// If the chain is empty after consensus, then this peer is the first node on the network
 	if len(b.blockchain) == 0 {
 		// Initialize the chain by creating the genesis block
 		b.createGenesisBlock()
 	}
+
+	return nil
 }
 
 // createGenesisBlock initializes and adds a genesis block to the blockchain
@@ -136,10 +145,10 @@ func (b *Blockchain) mine(data Data) {
 
 // Run utilizes the blockchain components to run this blockchain peer by sending/recieving
 // requests and messages on the p2p network
-func (b Blockchain) Run(wg *sync.WaitGroup) {
+func (b Blockchain) Run() {
 
 	//When Run() concludes, terminate() will be called to clean up the different Blockchain components
-	defer b.terminate(wg)
+	defer b.terminate()
 
 	// Sets done equal to true if the user exits the program with ctrl+c, which will case the loop to finish and Run() to exit,
 	// which will cause terminate() to run
@@ -157,26 +166,54 @@ func (b Blockchain) Run(wg *sync.WaitGroup) {
 	log.Println("Announcing self to peers...")
 
 	var lastPing = time.Now()
-	go b.communicationComponent.PingNetwork()
-
+	go func() {
+		err := b.communicationComponent.PingNetwork()
+		if err != nil {
+			log.Printf("Error pinging network: %#v\n", err)
+		}
+	}()
 	fmt.Println()
 
 	for !done {
 
-		go b.communicationComponent.RecieveFromNetwork()
+		go func() {
+			err := b.communicationComponent.RecieveFromNetwork()
+			if err != nil {
+				log.Printf("Fatal Error recieving from network: %#v\n", err)
+				done = true
+			}
+		}()
 
 		select {
 		case peerMsg := <-b.communicationComponent.GetMessageChannel():
 			switch peerMsg.Command {
+
 			case "PING":
 				log.Printf("Recieved a ping from %s:%d\n", peerMsg.From.Address.IP.String(), peerMsg.From.Address.Port)
+
 			case "MINE":
 				// Start mining the new block
-				// If the block is successfully mined by another node first, this node will receice
+				// If the block is successfully mined by another node first, this node will receive
 				// a message to quit mining the particular block and wait for the next
+
+			case "HALT":
+				// Cancel current mining session, as another peer has already successfully mined the block
+
+				// TODO: Might need to have a conditional here on whether or not this node was the node to successfully mine the block
+				// But on the other hand, this node could have mined the block, but not been the first, so stil should run consensus
+
+				// Run consensus to get the updated chain, in any case
+				err := b.consensusComponent.ConsensusMethod()
+				if err != nil {
+					log.Printf("Fatal Error running consensus method: %#v", err)
+					done = true
+				}
+
 			default:
 				log.Println("Warning: Command \"" + peerMsg.Command + "\" not supported")
+
 			}
+
 		default:
 			//There was no message to read, thus do nothing
 		}
@@ -184,7 +221,12 @@ func (b Blockchain) Run(wg *sync.WaitGroup) {
 		// Ping all peer nodes on the network once every minute
 		if time.Since(lastPing).Seconds() >= 10 {
 			log.Println("Blockchain peer sending pings...")
-			go b.communicationComponent.PingNetwork()
+			go func() {
+				err := b.communicationComponent.PingNetwork()
+				if err != nil {
+					log.Printf("Error pinging network: %#v\n", err)
+				}
+			}()
 			lastPing = time.Now()
 		}
 
@@ -199,7 +241,7 @@ func (b Blockchain) Run(wg *sync.WaitGroup) {
 }
 
 // terminate calls all of the interface-defined component clean-up methods
-func (b Blockchain) terminate(wg *sync.WaitGroup) {
+func (b Blockchain) terminate() {
 	fmt.Println("\nTerminating Blockchain components...")
 
 	b.communicationComponent.Terminate()
@@ -207,13 +249,23 @@ func (b Blockchain) terminate(wg *sync.WaitGroup) {
 	b.consensusComponent.Terminate()
 
 	fmt.Println("Exiting Blockchain peer...")
-
-	wg.Done()
-
 }
 
-func (b *Blockchain) initializeComponents() {
-	b.communicationComponent.Initialize()
-	b.consensusComponent.Initialize()
-	b.proofComponent.Initialize()
+func (b *Blockchain) initializeComponents() error {
+	// Initialize the communication component
+	err := b.communicationComponent.Initialize()
+
+	// Initialize the consensus component
+	err = b.consensusComponent.Initialize()
+
+	// Initialize the proof component
+	err = b.proofComponent.Initialize()
+
+	// If there was an error initializing one of the components
+	if err != nil {
+		fmt.Printf("Error initializing Blockchain components: %#v", err)
+		return err
+	}
+
+	return nil
 }

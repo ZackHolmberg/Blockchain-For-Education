@@ -1,5 +1,7 @@
 package blockchain
 
+import "log"
+
 // ============================ Consensus ============================
 
 // LongestChain algorithm used in Blockchain consensus
@@ -8,8 +10,9 @@ type LongestChain struct {
 }
 
 // Initialize is the interface method that calls this component's initialize method
-func (l LongestChain) Initialize() {
+func (l LongestChain) Initialize() error {
 	// No initialization needed for this implementation
+	return nil
 }
 
 // Terminate is the interface method that calls this component's cleanup method
@@ -18,12 +21,20 @@ func (l LongestChain) Terminate() {
 }
 
 // ConsensusMethod is the interface method that calls this component's consensus method, longestChain
-func (l LongestChain) ConsensusMethod() {
-	longestChain()
+func (l LongestChain) ConsensusMethod() error {
+
+	err := longestChain()
+
+	if err != nil {
+		log.Printf("Error running conesnsus method: %#v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 // longestChain uses the longestChain algorithm to achieve blockchain consensus amongst network
-func longestChain() int {
+func longestChain() error {
 	//TODO: Implement
-	return 0
+	return nil
 }

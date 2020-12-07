@@ -3,7 +3,6 @@ package main
 import (
 	"blockchain"
 	"fmt"
-	"sync"
 )
 
 var communicator *blockchain.Communicator
@@ -17,19 +16,13 @@ func init() {
 
 func main() {
 
-	wg := new(sync.WaitGroup)
-
 	// start middleware
 	fmt.Println("\nStarting Middleware...")
-	m := blockchain.NewMiddleware(communicator)
-	wg.Add(1)
-	go m.Run(wg)
-
-	wg.Wait()
+	m, err := blockchain.NewMiddleware(communicator, 8080, 8090)
+	if err != nil {
+		fmt.Printf("Fatal error creating Middleware: %#v\n", err)
+	} else {
+		m.Run()
+	}
 
 }
-
-// --- Misc. Notes ---
-// Middleware/MessageHandler Proxy on the network that students send HTTPS requests to, which it then transalates
-// to something readable by the peers on the network and broadcasts
-// students might have to go get zeroconf pkg, or maybe we can install it on aviary

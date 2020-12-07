@@ -15,8 +15,9 @@ type ProofOfWork struct {
 }
 
 // Initialize is the interface method that calls this component's initialize method
-func (p ProofOfWork) Initialize() {
+func (p ProofOfWork) Initialize() error {
 	// No initialization needed for this implementation
+	return nil
 }
 
 // Terminate is the interface method that calls this component's cleanup method

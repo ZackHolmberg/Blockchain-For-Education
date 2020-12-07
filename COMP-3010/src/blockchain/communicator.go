@@ -51,7 +51,7 @@ func (c Communicator) GetPeerChains() {
 
 // RecieveFromNetwork is the interface method that
 // returns a Message that it reads from this peer's UDP socket
-func (c *Communicator) RecieveFromNetwork() {
+func (c *Communicator) RecieveFromNetwork() error {
 
 	buf := make([]byte, 2048)
 	c.socket.SetReadDeadline(time.Now().Add(1 * time.Millisecond))
@@ -61,11 +61,11 @@ func (c *Communicator) RecieveFromNetwork() {
 	if err != nil {
 		if er, ok := err.(net.Error); ok && er.Timeout() {
 			// This was a timeout error, so just return as there was nothing to be read
-			return
+			return nil
 		} else if err != nil {
 			// This was an error, but not a timeout, so print it out
 			log.Printf("Error reading from socket: %v\n", err)
-			return
+			return err
 		}
 	}
 	// fmt.Println("DEBUG - Read a message from socket", string(buf))
@@ -76,7 +76,7 @@ func (c *Communicator) RecieveFromNetwork() {
 	err = json.Unmarshal(buf[:len], &message)
 	if err != nil {
 		log.Printf("Error unmarshalling message: %v\n", err)
-		return
+		return err
 	}
 
 	// fmt.Printf("DEBUG - Unmarshalled message from socket: %+v\n", message)
@@ -90,11 +90,13 @@ func (c *Communicator) RecieveFromNetwork() {
 	c.peerNodes = updateLastMessage(c.peerNodes, message.From)
 
 	c.peerMessage <- message
+
+	return nil
 }
 
 // BroadcastToNetwork is the interface method that uses
 // UDP to broadcast a message to all the peers on the network
-func (c Communicator) BroadcastToNetwork(msg Message) {
+func (c Communicator) BroadcastToNetwork(msg Message) error {
 
 	// fmt.Printf("DEBUG - Unmarshalled Message to send: %+v\n", msg)
 
@@ -102,34 +104,37 @@ func (c Communicator) BroadcastToNetwork(msg Message) {
 	endcodedMessage, err := json.Marshal(msg)
 	if err != nil {
 		log.Printf("Error marshalling message: %v\n", err)
-		return
+		return err
 	}
 	// fmt.Printf("DEBUG - Marshalled Message to send: %+v\n", string(endcodedMessage))
 
 	// Send the message to each known peer node
 	for _, peer := range c.peerNodes {
-		fmt.Printf("DEBUG - Broadcasting a message to peer: %+v\n", peer.Address)
+		// fmt.Printf("DEBUG - Broadcasting a message to peer: %+v\n", peer.Address)
 		_, err := c.socket.WriteToUDP(endcodedMessage, &peer.Address)
 		if err != nil {
 			log.Printf("Couldn't send message to peer: %v\n", err)
+			return err
 		}
 		// fmt.Println("DEBUG - Sent a message from socket")
 
 	}
+
+	return nil
 }
 
 // PingNetwork is the interface method that sends a ping to all known peer nodes
-func (c Communicator) PingNetwork() {
+func (c Communicator) PingNetwork() error {
 
 	if len(c.peerNodes) > 0 {
 
 		log.Println("Sending pings...")
-		fmt.Printf("DEBUG - Peer list: %+v\n", c.peerNodes)
 
-		addr := getUDPAddr(c.socket)
-
-		// Initialize the ping message to broadcast to peers on the network
-		pingMessage := Message{Command: "PING", Data: nil, From: Peer{Address: addr, LastMessage: time.Now()}}
+		pingMessage, err := c.GenerateMessage("PING", nil)
+		if err != nil {
+			log.Printf("Error generating message: %v", err)
+			return err
+		}
 
 		//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
 		temp, _ := net.LookupIP("localhost")
@@ -141,29 +146,47 @@ func (c Communicator) PingNetwork() {
 	} else {
 		log.Println("No known peer nodes, not sending pings")
 	}
+
+	return nil
 }
 
 // Initialize initializes a new communicator by initializing
 // a socket and ZeroConf service and discovering other services
-func (c *Communicator) Initialize() {
+func (c *Communicator) Initialize() error {
+
+	// Get the UDPAddr of this peer's socket
+	addr, err := getUDPAddr(c.socket)
+	if err != nil {
+		log.Printf("Failed to get UDP address: %#v\n", err)
+		return err
+	}
 
 	// Initialize the socket that this peer will communicate through
 	c.socket = initializeSocket()
 
 	// Initialize the service that this peer will join the p2p network through
-	c.self = initializeService(getUDPAddr(c.socket).Port)
+	c.self = initializeService(addr.Port)
 
 	// Discover peers on the p2p network
-	c.peerNodes = discoverPeers(getUDPAddr(c.socket))
+	c.peerNodes = discoverPeers(addr)
 
 	// Initialize peer Message channel
 	c.peerMessage = make(chan Message)
+
+	return nil
 
 }
 
 // InitializeWithPort "overloads" thr Initialize method, and initializes
 // the communicator with the passed well-defined port, instead of dynamically assgning a port
-func (c *Communicator) InitializeWithPort(port int) {
+func (c *Communicator) InitializeWithPort(port int) error {
+
+	// Get the UDPAddr of this peer's socket
+	addr, err := getUDPAddr(c.socket)
+	if err != nil {
+		log.Printf("Failed to get UDP address: %#v\n", err)
+		return err
+	}
 
 	// Initialize the socket that this peer will communicate through
 	c.socket = initializeSocketWithPort(port)
@@ -172,10 +195,12 @@ func (c *Communicator) InitializeWithPort(port int) {
 	c.self = initializeService(port)
 
 	// Discover peers on the p2p network
-	c.peerNodes = discoverPeers(getUDPAddr(c.socket))
+	c.peerNodes = discoverPeers(addr)
 
 	// Initialize peer Message channel
 	c.peerMessage = make(chan Message)
+
+	return nil
 }
 
 // Terminate is the interface method that calls this component's cleanup method
@@ -191,13 +216,24 @@ func (c *Communicator) PrunePeerNodes() {
 	for i, peer := range c.peerNodes {
 		if time.Since(peer.LastMessage).Seconds() >= 20 {
 			log.Printf("Pruning peer node: %+v\n", peer)
-			fmt.Printf("DEBUG - List before removing: %+v\n", c.peerNodes)
 			c.peerNodes = removeFromList(c.peerNodes, peer, i)
-			fmt.Printf("DEBUG - List after removing: %+v\n", c.peerNodes)
-
 		}
 	}
 
+}
+
+// GenerateMessage uses the passed values to generate a new Message
+func (c *Communicator) GenerateMessage(cmd string, data Data) (Message, error) {
+
+	addr, err := getUDPAddr(c.socket)
+	if err != nil {
+		log.Fatalf("Failed to get UDP address: %#v\n", err)
+		return Message{}, err
+	}
+
+	newMessage := Message{Command: cmd, Data: data, From: Peer{Address: addr, LastMessage: time.Now()}}
+
+	return newMessage, nil
 }
 
 // == Non-interface methods ==
@@ -211,7 +247,11 @@ func (c Communicator) terminateCommunicator() {
 	c.self.Shutdown()
 
 	//Close the socket
-	c.socket.Close()
+	err := c.socket.Close()
+
+	if err != nil {
+		log.Printf("Error closing socket: %#v\n", err)
+	}
 }
 
 func initializeSocket() *net.UDPConn {
@@ -219,14 +259,12 @@ func initializeSocket() *net.UDPConn {
 	//Dynamically get an unused port assigned by opening a socket with port set to 0
 	addr, err := net.ResolveUDPAddr("udp", ":0")
 	if err != nil {
-		log.Fatalf("Failed to resolve UDP address: %v\n", err)
-		return nil
+		log.Fatalf("Failed to resolve UDP address: %#v\n", err)
 	}
 
 	s, err := net.ListenUDP("udp", addr)
 	if err != nil {
-		log.Printf("Failed to create new socket: %v\n", err)
-		return nil
+		log.Fatalf("Failed to create new socket: %#v\n", err)
 	}
 
 	return s
@@ -239,20 +277,18 @@ func initializeSocketWithPort(port int) *net.UDPConn {
 	addr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("Failed to resolve UDP address: %v\n", err)
-		return nil
 	}
 
 	s, err := net.ListenUDP("udp", addr)
 	if err != nil {
 		log.Fatalf("Failed to create new socket: %v\n", err)
-		return nil
 	}
-
-	fmt.Printf("DEBUG - Intialized socket: %+v\n", addr)
 
 	return s
 }
 
+// Errors that occur within this function and similar ones do not need to be passed up to the caller
+// because the program just exits if an error occurs
 func initializeService(port int) *zeroconf.Server {
 
 	//Get name of host to use in the peerName
@@ -317,8 +353,6 @@ func discoverPeers(addr net.UDPAddr) []Peer {
 
 			//If the entry is the service corresponding to this peer, ignore it
 			if equalPeers(*newAddr, addr) {
-				// fmt.Println("DEBUG - Peers equal but not skipping")
-
 				continue
 			}
 
@@ -362,23 +396,25 @@ func knownPeer(slice []Peer, p Peer) bool {
 	return false
 }
 
-func getUDPAddr(c *net.UDPConn) net.UDPAddr {
+func getUDPAddr(c *net.UDPConn) (net.UDPAddr, error) {
 
 	port := c.LocalAddr().(*net.UDPAddr).Port
 
 	hostname, err := os.Hostname()
 	if err != nil {
-		log.Fatalln("Error getting hostname: ", err)
+		log.Printf("Error resolving hostname: %#v", err)
+		return net.UDPAddr{}, nil
 	}
 
 	ip, err := net.LookupIP(hostname)
 	if err != nil {
-		log.Fatalln("Error getting hostname: ", err)
+		log.Printf("Error resolving hostname IP: %#v", err)
+		return net.UDPAddr{}, nil
 	}
 
 	addr := net.UDPAddr{IP: ip[0], Port: port, Zone: ""}
 
-	return addr
+	return addr, nil
 }
 
 func removeFromList(peers []Peer, p Peer, i int) []Peer {
@@ -401,6 +437,5 @@ func updateLastMessage(p []Peer, t Peer) []Peer {
 }
 
 func equalPeers(p1 net.UDPAddr, p2 net.UDPAddr) bool {
-	fmt.Printf("DEBUG - Comparing peers: %+v and %+v\n", p1, p2)
 	return p1.IP.String() == p2.IP.String() && p1.Port == p2.Port
 }

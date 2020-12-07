@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
+	"strconv"
 	"syscall"
 	"time"
 )
@@ -17,21 +17,42 @@ type Middleware struct {
 	communicationComponent CommunicationComponent
 	transactionQueue       *list.List
 	newTransaction         chan Transaction
+	port                   int
 }
 
-func handleNewTransaction(w http.ResponseWriter, req *http.Request) {
+func (m *Middleware) handleNewTransaction(w http.ResponseWriter, r *http.Request) {
 
 	// Receive transaction data from client
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+
+	from := r.FormValue("from")
+	to := r.FormValue("to")
+	amount, err := strconv.Atoi(r.FormValue("amount"))
+	if err != nil {
+		log.Printf("Error converting int to string: %v", err)
+		fmt.Fprintf(w, "Something bad occured, please try your request again!")
+		return
+	}
 
 	// Transform into a Transaction struct
+	newTransaction := Transaction{From: from, To: to, Amount: amount}
 
-	// Create a new Message struct, containing the new Transactio as data
-
-	// Set the command to MINE
+	// Create a new Message struct, containing the new Transaction as data and setting command to mine
+	newMessage, err := m.communicationComponent.GenerateMessage("MINE", newTransaction)
+	if err != nil {
+		log.Printf("Error generating message: %v", err)
+		fmt.Fprintf(w, "Something bad occured, please try your request again!")
+		return
+	}
 
 	// Add it the the queue of transactions to be sent out
-	fmt.Fprintf(w, "endpoint hit!\n")
-	fmt.Fprintf(w, "your request: %+v\n", *req)
+	m.transactionQueue.PushBack(newMessage)
+
+	// Notify the client that the transaction was successfully processed
+	fmt.Fprintf(w, "Transaction processed succesfully!")
 
 }
 
@@ -44,23 +65,31 @@ func handleNewTransaction(w http.ResponseWriter, req *http.Request) {
 // ignore any other solutions that came after the first one. Then, the process repeats.
 
 // NewMiddleware creates and returns a new Middleware, with the Genesis Block initialized
-func NewMiddleware(com CommunicationComponent) Middleware {
+func NewMiddleware(com CommunicationComponent, udpPort int, serverPort int) (Middleware, error) {
 
 	// Define a new Middleware with the passed component value
 	newMiddleware := Middleware{communicationComponent: com}
 
 	// Initialize the Middleware
-	newMiddleware.Initialize()
+	err := newMiddleware.Initialize(udpPort, serverPort)
+	if err != nil {
+		fmt.Printf("Error initializing Middleware: %#v\n", err)
+		return Middleware{}, err
+	}
 
-	return newMiddleware
+	return newMiddleware, nil
 }
 
 // Initialize initializes the middleware by starting the request handlers,
 // initializing its components and serving itself on the network
-func (m *Middleware) Initialize() {
+func (m *Middleware) Initialize(udpPort int, serverPort int) error {
 
 	// Intialize communication component
-	m.communicationComponent.InitializeWithPort(8080)
+	err := m.communicationComponent.InitializeWithPort(udpPort)
+	if err != nil {
+		fmt.Printf("Error initializing communication component: %#v\n", err)
+		return err
+	}
 
 	// Initialize Transaction queue
 	m.transactionQueue = list.New()
@@ -68,19 +97,23 @@ func (m *Middleware) Initialize() {
 	// Initialize Transaction channel
 	m.newTransaction = make(chan Transaction)
 
+	// Initialize port variable
+	m.port = udpPort
+
 	// Initialize newTransaction request handler
-	http.HandleFunc("/newTransaction", handleNewTransaction)
+	http.HandleFunc("/newTransaction", m.handleNewTransaction)
 
 	// Serve the http server
-	go http.ListenAndServe(":8090", nil)
+	go http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
 
+	return nil
 }
 
 // Run utilizes its component and the http package to receive requests
 // from clients and send/recieve messages to blockchain peers on the p2p network
-func (m Middleware) Run(wg *sync.WaitGroup) {
+func (m Middleware) Run() {
 
-	defer m.terminate(wg)
+	defer m.terminate()
 
 	// Calls the cleanup function terminate() if the user exits the program with ctrl+c
 	c := make(chan os.Signal)
@@ -93,16 +126,48 @@ func (m Middleware) Run(wg *sync.WaitGroup) {
 
 	fmt.Println("\nRunning Middleware...")
 
-	log.Println("Announcing self to peers...")
-
 	var lastPing = time.Now()
 	go m.communicationComponent.PingNetwork()
 
 	fmt.Println()
 
+	peersMining, proofFound := false, false
+
 	for !done {
 
-		// Handle http request from client
+		// If !peersMining, pop a transaction from the queue and broacast to network
+		if !peersMining && m.transactionQueue.Len() > 0 {
+
+			// Pop a Message from the transactionQueue
+			toMine := m.pop()
+
+			// Broadcast the new transaction to the peers on the network
+			m.communicationComponent.BroadcastToNetwork(toMine)
+
+			// Set peersMining to true and proofFound to false since the above function call will cause the blockchain
+			// peers to begin mining the new transaction, starting a new mining session
+			peersMining = true
+			proofFound = false
+
+		} else if proofFound {
+
+			// Else if proofFound, conclude the current mining session by broadcasting a halt message to the peers
+			// to halt mining
+
+			toSend, err := m.communicationComponent.GenerateMessage("HALT", nil)
+			if err != nil {
+				log.Printf("Error generating message: %v", err)
+				// If an error occurs, skip to the next iteration of the loop and try again
+				continue
+			}
+
+			// Broadcast the halt message to the peers on the network
+			m.communicationComponent.BroadcastToNetwork(toSend)
+
+			// TODO: Only set peersMining to false once we know all peers have stopped mining, if possible
+			peersMining = false
+		}
+		//
 
 		// Handle message from peers
 		go m.communicationComponent.RecieveFromNetwork()
@@ -112,10 +177,17 @@ func (m Middleware) Run(wg *sync.WaitGroup) {
 			switch peerMsg.Command {
 			case "PING":
 				log.Printf("Recieved a ping from %s:%d\n", peerMsg.From.Address.IP.String(), peerMsg.From.Address.Port)
-			case "MINE":
-				// Start mining the new block
-				// If the block is successfully mined by another node first, this node will receice
-				// a message to quit mining the particular block and wait for the next
+			case "PROOF":
+				// A blockchain peer is returning a proof for the current mining session, thus set proofFound to true
+				// so that the mining session is concluded
+				if !proofFound {
+					proofFound = true
+
+					// TODO: Send a reward to the successful miner
+				}
+
+				// Else this was not the first proof found, so ignore this message
+
 			default:
 				log.Println("Warning: Command \"" + peerMsg.Command + "\" not supported")
 			}
@@ -141,13 +213,25 @@ func (m Middleware) Run(wg *sync.WaitGroup) {
 }
 
 // terminate calls all of the interface-defined component clean-up methods
-func (m Middleware) terminate(wg *sync.WaitGroup) {
+func (m Middleware) terminate() {
 	fmt.Println("\nTerminating Middleware components...")
 
 	m.communicationComponent.Terminate()
 
 	fmt.Println("Exiting Middleware...")
+}
 
-	wg.Done()
+// Pops a message of the Middleware's transactionQueue and returns it
+func (m *Middleware) pop() Message {
 
+	// Get element from the front of the list
+	poppedElement := m.transactionQueue.Front()
+
+	// Remove the element, essentially "popping" it
+	m.transactionQueue.Remove(poppedElement)
+
+	//Convert the popped element, which is of type *Element, to *Message
+	toMine := poppedElement.Value.(Message)
+
+	return toMine
 }
