@@ -22,25 +22,20 @@ func (p ProofOfWork) Initialize() error {
 
 // Terminate is the interface method that calls this component's cleanup method
 func (p ProofOfWork) Terminate() {
-	// No initialization needed for this implementation
+	// No clean-up needed for this implementation
 }
 
 // ProofMethod is the interface method that calls this component's proof method
-func (p ProofOfWork) ProofMethod(b Block) string {
-	return proofOfWork(p, b)
+func (p ProofOfWork) ProofMethod(b Block, m bool) string {
+	return proofOfWork(p, b, m)
 }
 
 // proofOfWork is the proof of work algorithm that
-func proofOfWork(p ProofOfWork, b Block) string {
-
-	// TOOD: Consider adding a stopMining boolean here in the loop that will stop this process
-	// if this peer recieves a message to stop mining because the current block has already
-	// been mined. Maybe need a second returnVal then as well, denoting whether the proof was
-	// completed or aborted
+func proofOfWork(p ProofOfWork, b Block, mining bool) string {
 
 	nonce := 0
 	proof := ""
-	for !p.ValidateProof(proof) {
+	for !p.ValidateProof(proof) && mining {
 		proof = p.CalculateHash(nonce, b)
 		nonce++
 	}

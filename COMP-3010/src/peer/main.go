@@ -24,7 +24,7 @@ func main() {
 	fmt.Println("\nStarting Blockchain...")
 	bc, err := blockchain.NewBlockchain(communicator, proofOfWork, longestChain)
 	if err != nil {
-		fmt.Printf("Fatal error creating Blockchain: %#v\n", err)
+		fmt.Printf("Fatal error creating Blockchain: %+v\n", err)
 	} else {
 		bc.Run()
 	}

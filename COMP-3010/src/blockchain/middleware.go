@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,7 +18,6 @@ type Middleware struct {
 	communicationComponent CommunicationComponent
 	transactionQueue       *list.List
 	newTransaction         chan Transaction
-	port                   int
 }
 
 func (m *Middleware) handleNewTransaction(w http.ResponseWriter, r *http.Request) {
@@ -56,14 +56,6 @@ func (m *Middleware) handleNewTransaction(w http.ResponseWriter, r *http.Request
 
 }
 
-// Need a function that will facilitate block mining.
-// Essentially, this middleware will keep a queue of transactions.
-// The middleware will pop a transaction off the queue and broadcast it to all
-// the nodes on the network. It then waits for one of the peers to mine the block,
-// which it will know because a message will be sent to this middleware. The middleware
-// will then broadcast a msg to all nodes telling them to stop mining, and will
-// ignore any other solutions that came after the first one. Then, the process repeats.
-
 // NewMiddleware creates and returns a new Middleware, with the Genesis Block initialized
 func NewMiddleware(com CommunicationComponent, udpPort int, serverPort int) (Middleware, error) {
 
@@ -73,7 +65,7 @@ func NewMiddleware(com CommunicationComponent, udpPort int, serverPort int) (Mid
 	// Initialize the Middleware
 	err := newMiddleware.Initialize(udpPort, serverPort)
 	if err != nil {
-		fmt.Printf("Error initializing Middleware: %#v\n", err)
+		fmt.Printf("Error initializing Middleware: %+v\n", err)
 		return Middleware{}, err
 	}
 
@@ -87,7 +79,7 @@ func (m *Middleware) Initialize(udpPort int, serverPort int) error {
 	// Intialize communication component
 	err := m.communicationComponent.InitializeWithPort(udpPort)
 	if err != nil {
-		fmt.Printf("Error initializing communication component: %#v\n", err)
+		fmt.Printf("Error initializing communication component: %+v\n", err)
 		return err
 	}
 
@@ -96,9 +88,6 @@ func (m *Middleware) Initialize(udpPort int, serverPort int) error {
 
 	// Initialize Transaction channel
 	m.newTransaction = make(chan Transaction)
-
-	// Initialize port variable
-	m.port = udpPort
 
 	// Initialize newTransaction request handler
 	http.HandleFunc("/newTransaction", m.handleNewTransaction)
@@ -135,8 +124,10 @@ func (m Middleware) Run() {
 
 	for !done {
 
-		// If !peersMining, pop a transaction from the queue and broacast to network
+		// If !peersMining and there is at least one transaction to be mind, pop a transaction
+		// from the queue and broacast to network, starting a new mining session
 		if !peersMining && m.transactionQueue.Len() > 0 {
+			log.Println("Beginning a new mining session...")
 
 			// Pop a Message from the transactionQueue
 			toMine := m.pop()
@@ -149,10 +140,11 @@ func (m Middleware) Run() {
 			peersMining = true
 			proofFound = false
 
-		} else if proofFound {
+		} else if peersMining && proofFound {
 
 			// Else if proofFound, conclude the current mining session by broadcasting a halt message to the peers
-			// to halt mining
+			// to halt mining and cause consensus to be run so every peer gets a copy of the new longest chain
+			log.Println("Broadcasting halt message to peers...")
 
 			toSend, err := m.communicationComponent.GenerateMessage("HALT", nil)
 			if err != nil {
@@ -164,10 +156,12 @@ func (m Middleware) Run() {
 			// Broadcast the halt message to the peers on the network
 			m.communicationComponent.BroadcastToNetwork(toSend)
 
-			// TODO: Only set peersMining to false once we know all peers have stopped mining, if possible
+			// Timeout for 5 seconds to give peers time to conduct consensus
+			log.Println("Sleeping for 3 seconds while peers run mining session concludes...")
+			time.Sleep(3 * time.Second)
+
 			peersMining = false
 		}
-		//
 
 		// Handle message from peers
 		go m.communicationComponent.RecieveFromNetwork()
@@ -182,8 +176,30 @@ func (m Middleware) Run() {
 				// so that the mining session is concluded
 				if !proofFound {
 					proofFound = true
+					log.Println("Peer found proof. Ending current mining session...")
 
-					// TODO: Send a reward to the successful miner
+					// Send a reward to the successful miner, which will tell them to add the mined block to their chain,
+					// which will become the new global chain once consensus is run
+					newData := Transaction{From: "", To: "", Amount: 5}
+					toSend, err := m.communicationComponent.GenerateMessage("REWARD", newData)
+					if err != nil {
+						log.Printf("Error generating message: %v", err)
+					}
+
+					//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
+					temp, _ := net.LookupIP("localhost")
+					peerMsg.From.Address.IP = temp[0]
+					// =====================================================
+
+					log.Println("Sending reward to successful peer")
+					err = m.communicationComponent.SendToPeer(toSend, peerMsg.From)
+					if err != nil {
+						// This would be a fatal error because if a peer doesn't recieve the reward,
+						// it wont add the new block to its chain, and the block will get lost if the next session begins
+						log.Printf("Fatal Error sending reward to peer: %v", err)
+						done = true
+					}
+
 				}
 
 				// Else this was not the first proof found, so ignore this message
@@ -196,7 +212,7 @@ func (m Middleware) Run() {
 		}
 
 		// Ping all peer nodes on the network once every minute
-		if time.Since(lastPing).Seconds() >= 10 {
+		if time.Since(lastPing).Minutes() >= 1 {
 			log.Println("Middleware peer sending pings...")
 			go m.communicationComponent.PingNetwork()
 			lastPing = time.Now()
@@ -214,6 +230,7 @@ func (m Middleware) Run() {
 
 // terminate calls all of the interface-defined component clean-up methods
 func (m Middleware) terminate() {
+
 	fmt.Println("\nTerminating Middleware components...")
 
 	m.communicationComponent.Terminate()
