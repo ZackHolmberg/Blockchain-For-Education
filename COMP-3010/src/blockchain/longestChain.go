@@ -1,7 +1,6 @@
 package blockchain
 
 import (
-	"fmt"
 	"log"
 )
 
@@ -24,9 +23,9 @@ func (l LongestChain) Terminate() {
 }
 
 // ConsensusMethod is the interface method that calls this component's consensus method, longestChain
-func (l LongestChain) ConsensusMethod(c CommunicationComponent) ([]Block, error) {
+func (l LongestChain) ConsensusMethod(p [][]Block, c []Block) ([]Block, error) {
 
-	longestChain, err := longestChain(c)
+	longestChain, err := longestChain(p, c)
 
 	if err != nil {
 		log.Printf("Error running conesnsus method: %+v\n", err)
@@ -37,25 +36,28 @@ func (l LongestChain) ConsensusMethod(c CommunicationComponent) ([]Block, error)
 }
 
 // longestChain uses the longestChain algorithm to achieve blockchain consensus amongst network
-func longestChain(c CommunicationComponent) ([]Block, error) {
+func longestChain(p [][]Block, c []Block) ([]Block, error) {
 
-	var index int
-	length := 0
+	index := -1
+	length := len(c)
 
-	peerChains, err := c.GetPeerChains()
-	if err != nil {
-		log.Printf("Error getting peer chains: %+v\n", err)
-		return nil, err
-	}
-
-	for i := 0; i < len(peerChains); i++ {
-		if len(peerChains[i]) > length {
+	for i, chain := range p {
+		currLength := len(chain)
+		if currLength > length {
 			index = i
-			length = len(peerChains[i])
+			length = currLength
 		}
 	}
 
-	fmt.Println("<<Ran consensus>>")
+	var toReturn []Block
 
-	return peerChains[index], nil
+	if index != -1 {
+		toReturn = p[index]
+	} else {
+		toReturn = c
+	}
+
+	log.Println("Ran consensus")
+
+	return toReturn, nil
 }

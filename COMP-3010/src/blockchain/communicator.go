@@ -25,17 +25,10 @@ type Communicator struct {
 	middleware  Peer
 }
 
-// Message is the struct that is marshalled/demarshalled between peers to communicate
-type Message struct {
-	From    Peer   `json:"from"`
-	Command string `json:"command"`
-	Data    Data   `json:"data"`
-}
-
 // Peer represents a peer on the network and contains metadata about that peer
 type Peer struct {
-	Address     net.UDPAddr
-	LastMessage time.Time
+	Address         net.UDPAddr `json:"address"`
+	LastMessageTime time.Time   `json:"lastMessageTime"`
 }
 
 // GetMessageChannel is the interface retriever method that returns the channel that a message from a peer is put into upon read
@@ -43,26 +36,24 @@ func (c Communicator) GetMessageChannel() chan Message {
 	return c.peerMessage
 }
 
+// GetPeerNodes is the interface retriever method that returns this node's list of peers
+func (c Communicator) GetPeerNodes() []Peer {
+	return c.peerNodes
+}
+
 // GetMiddlewarePeer is the interface retriever method that returns a pointer to the Middlware peer
 func (c Communicator) GetMiddlewarePeer() Peer {
 	return c.middleware
 }
 
-// GetPeerChains is the interface method that retrieves the copy of the blockchain from every peer on the network
-func (c Communicator) GetPeerChains() ([][]Block, error) {
-	// TODO: Implement
-	// Wait - how actually am I going to do this?
-	// Maybe Middleware will query every node and return a list perhaps??
-
-	return nil, nil
-}
-
 // RecieveFromNetwork is the interface method that
 // returns a Message that it reads from this peer's UDP socket
-func (c *Communicator) RecieveFromNetwork() error {
+func (c *Communicator) RecieveFromNetwork(withTimeout bool) error {
 
-	buf := make([]byte, 2048)
-	c.socket.SetReadDeadline(time.Now().Add(1 * time.Millisecond))
+	buf := make([]byte, 65535)
+	if withTimeout {
+		c.socket.SetReadDeadline(time.Now().Add(1 * time.Millisecond))
+	}
 
 	// Read from the socket
 	len, _, err := c.socket.ReadFromUDP(buf)
@@ -76,15 +67,11 @@ func (c *Communicator) RecieveFromNetwork() error {
 			return err
 		}
 	}
-	// fmt.Println("DEBUG - Read a message from socket", string(buf))
+	// fmt.Printf("DEBUG - Read a message from socket: %+v\n", string(buf))
 
-	// TODO: If there are other types that implement Data, we would have to attempt to demarshal
-	// data into every one of those types and move forward with the successful unmarshal
 	message := new(Message)
-	message.Data = &Transaction{}
 
-	// Unmarshal the JSON into a Message
-	err = json.Unmarshal(buf[:len], message)
+	err = message.UnmarshalJSON(buf[:len])
 	if err != nil {
 		log.Printf("Error unmarshalling message: %v\n", err)
 		return err
@@ -94,69 +81,17 @@ func (c *Communicator) RecieveFromNetwork() error {
 
 	// If the peer that sent the message is not a known peer, add it to the peerNodes list
 	if !knownPeer(c.peerNodes, message.From) {
+		// fmt.Println("DEBUG - Peer is not known")
 		c.peerNodes = append(c.peerNodes, message.From)
 	}
+	// fmt.Println("DEBUG - Checked if known peer")
 
 	// Update the known peer's LastMessage value
 	c.peerNodes = updateLastMessage(c.peerNodes, message.From)
+	// fmt.Println("DEBUG - Updated last message")
 
 	c.peerMessage <- *message
-
-	return nil
-}
-
-// BroadcastToNetwork is the interface method that uses
-// UDP to broadcast a message to all the peers on the network
-func (c Communicator) BroadcastToNetwork(msg Message) error {
-
-	// fmt.Printf("DEBUG - Unmarshalled Message to send: %+v\n", msg)
-
-	// Marshal the Message into JSON
-	endcodedMessage, err := json.Marshal(msg)
-	if err != nil {
-		log.Printf("Error marshalling message: %v\n", err)
-		return err
-	}
-	// fmt.Printf("DEBUG - Marshalled Message to send: %+v\n", string(endcodedMessage))
-	// fmt.Printf("DEBUG - Broadcasting to peer list: %+v\n", c.peerNodes)
-
-	// Send the message to each known peer node
-	for _, peer := range c.peerNodes {
-		// fmt.Printf("DEBUG - Broadcasting a message to peer: %+v\n", peer.Address)
-		_, err := c.socket.WriteToUDP(endcodedMessage, &peer.Address)
-		if err != nil {
-			log.Printf("Couldn't send message to peer during broadcast: %v\n", err)
-			return err
-		}
-		// fmt.Println("DEBUG - Sent a message from socket")
-
-	}
-
-	return nil
-}
-
-// SendToPeer is the interface method that sends a
-// UDP  message to one peer on the network
-func (c Communicator) SendToPeer(msg Message, p Peer) error {
-
-	// fmt.Printf("DEBUG - Unmarshalled Message to send: %+v\n", msg)
-
-	// Marshal the Message into JSON
-	endcodedMessage, err := json.Marshal(msg)
-	if err != nil {
-		log.Printf("Error marshalling message: %v\n", err)
-		return err
-	}
-	// fmt.Printf("DEBUG - Marshalled Message to send: %+v\n", string(endcodedMessage))
-
-	// Send the message to the peer
-	// fmt.Printf("DEBUG - Broadcasting a message to peer: %+v\n", peer.Address)
-	_, err = c.socket.WriteToUDP(endcodedMessage, &p.Address)
-	if err != nil {
-		log.Printf("Couldn't send message to peer: %v\n", err)
-		return err
-	}
-	// fmt.Println("DEBUG - Sent a message from socket")
+	// fmt.Println("DEBUG - Successfully received message")
 
 	return nil
 }
@@ -168,19 +103,13 @@ func (c Communicator) PingNetwork() error {
 
 		log.Println("Broadcasting pings...")
 
-		pingMessage, err := c.GenerateMessage("PING", nil)
+		// call BroadcastToNetwork to broadcast ping message
+		err := c.BroadcastMsgToNetwork("PING", nil)
 		if err != nil {
-			log.Printf("Error generating message: %v", err)
+			log.Printf("Error broadcasting pings: %v", err)
 			return err
 		}
 
-		//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
-		temp, _ := net.LookupIP("localhost")
-		pingMessage.From.Address.IP = temp[0]
-		// =====================================================
-
-		// call BroadcastToNetwork to broadcast ping message
-		c.BroadcastToNetwork(pingMessage)
 	} else {
 		log.Println("No known peer nodes, not sending pings")
 	}
@@ -208,8 +137,8 @@ func (c *Communicator) Initialize() error {
 	// Discover peers on the p2p network
 	c.discoverPeers(addr)
 
-	// Initialize peer Message channel
-	c.peerMessage = make(chan Message)
+	// Initialize peer Message channel. Need to have a 1 message buffer for peer startup.
+	c.peerMessage = make(chan Message, 1)
 
 	return nil
 
@@ -250,13 +179,61 @@ func (c Communicator) Terminate() {
 	c.terminateCommunicator()
 }
 
+// BroadcastMsgToNetwork is the interface method that uses
+// helper methods to broadcast messages
+func (c Communicator) BroadcastMsgToNetwork(cmd string, d Data) error {
+
+	toSend, err := c.GenerateMessage(cmd, d)
+	if err != nil {
+		log.Printf("Error generating message: %v\n", err)
+		return err
+	}
+
+	//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
+	temp, _ := net.LookupIP("localhost")
+	toSend.From.Address.IP = temp[0]
+	// =====================================================
+
+	err = c.broadcastToNetwork(toSend)
+	if err != nil {
+		log.Printf("Error broadcasting message: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
+// SendMsgToPeer is the interface method that uses
+// helper methods to send a message to a peer
+func (c Communicator) SendMsgToPeer(cmd string, d Data, p Peer) error {
+
+	toSend, err := c.GenerateMessage(cmd, d)
+	if err != nil {
+		log.Printf("Error generating message: %v\n", err)
+		return err
+	}
+
+	//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
+	temp, _ := net.LookupIP("localhost")
+	toSend.From.Address.IP = temp[0]
+	// =====================================================
+
+	err = c.sendToPeer(toSend, p)
+	if err != nil {
+		log.Printf("Error sending message to Peer: %v\n", err)
+		return err
+	}
+
+	return nil
+}
+
 // PrunePeerNodes is the interface method that removes nodes from the peerNodes list which  have
 // not sent a message within the previous 75 seconds, as we assume that node to have gone down
 // in this case
 func (c *Communicator) PrunePeerNodes() {
 
 	for i, peer := range c.peerNodes {
-		if time.Since(peer.LastMessage).Seconds() >= 75 {
+		if time.Since(peer.LastMessageTime).Seconds() >= 75 {
 			log.Printf("Pruning peer node: %+v\n", peer)
 			c.peerNodes = removeFromList(c.peerNodes, peer, i)
 		}
@@ -273,12 +250,12 @@ func (c *Communicator) GenerateMessage(cmd string, data Data) (Message, error) {
 		return Message{}, err
 	}
 
-	newMessage := Message{Command: cmd, Data: data, From: Peer{Address: addr, LastMessage: time.Now()}}
+	newMessage := Message{Command: cmd, Data: data, From: Peer{Address: addr, LastMessageTime: time.Now()}}
 
 	return newMessage, nil
 }
 
-// == Non-interface methods ==
+// ==================== Non-interface, helper methods ========================
 
 // terminateCommunicator cleans up and terminates this peer's socket and service
 func (c Communicator) terminateCommunicator() {
@@ -397,7 +374,7 @@ func (c *Communicator) discoverPeers(addr net.UDPAddr) error {
 				continue
 			}
 
-			newPeer := Peer{Address: *newAddr, LastMessage: time.Now()}
+			newPeer := Peer{Address: *newAddr, LastMessageTime: time.Now()}
 
 			//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
 			temp, err := net.LookupIP("localhost")
@@ -432,6 +409,67 @@ func (c *Communicator) discoverPeers(addr net.UDPAddr) error {
 
 	return nil
 
+}
+
+// broadcastToNetwork is the helper method that uses
+// UDP to broadcast a message to all the peers on the network
+func (c Communicator) broadcastToNetwork(msg Message) error {
+
+	// Marshal the Message into JSON
+	endcodedMessage, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("Error marshalling message: %v\n", err)
+		return err
+	}
+
+	// fmt.Printf("DEBUG - Broadcasting to peer list: %+v\n", c.peerNodes)
+
+	// Send the message to each known peer node
+	for _, peer := range c.peerNodes {
+
+		//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
+		temp, _ := net.LookupIP("localhost")
+		peer.Address.IP = temp[0]
+		// =====================================================
+
+		// fmt.Printf("DEBUG - Broadcasting a message to peer: %+v\n", peer.Address)
+
+		_, err := c.socket.WriteToUDP(endcodedMessage, &peer.Address)
+		if err != nil {
+			log.Printf("Couldn't send message to peer during broadcast: %v\n", err)
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+// sendToPeer is the helper method that sends a
+// UDP message to one peer on the network
+func (c Communicator) sendToPeer(msg Message, p Peer) error {
+
+	// Marshal the Message into JSON
+	endcodedMessage, err := json.Marshal(msg)
+	if err != nil {
+		log.Printf("Error marshalling message: %v\n", err)
+		return err
+	}
+
+	//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
+	temp, _ := net.LookupIP("localhost")
+	p.Address.IP = temp[0]
+	// =====================================================
+
+	// Send the message to the peer
+	// fmt.Printf("DEBUG - Sending a message to peer: %+v\n", p.Address)
+	_, err = c.socket.WriteToUDP(endcodedMessage, &p.Address)
+	if err != nil {
+		log.Printf("Couldn't send message to peer: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 // knownPeer takes a slice of peers and looks for a particular peer in it. If found it will
@@ -478,7 +516,7 @@ func updateLastMessage(p []Peer, t Peer) []Peer {
 	newList := p
 	for i := range newList {
 		if equalPeers(newList[i].Address, t.Address) {
-			newList[i].LastMessage = time.Now()
+			newList[i].LastMessageTime = time.Now()
 		}
 	}
 
@@ -486,5 +524,6 @@ func updateLastMessage(p []Peer, t Peer) []Peer {
 }
 
 func equalPeers(p1 net.UDPAddr, p2 net.UDPAddr) bool {
+	// fmt.Printf("DEBUG - Comparing p1: %#v ane p2 %#v", p1, p2)
 	return p1.IP.String() == p2.IP.String() && p1.Port == p2.Port
 }

@@ -46,7 +46,7 @@ type ProofComponent interface {
 
 // ConsensusComponent standardizes methods for any Blockchain consensus component
 type ConsensusComponent interface {
-	ConsensusMethod(c CommunicationComponent) ([]Block, error)
+	ConsensusMethod(peerChains [][]Block, currChain []Block) ([]Block, error)
 	Initialize() error
 	Terminate()
 }
@@ -55,16 +55,16 @@ type ConsensusComponent interface {
 type CommunicationComponent interface {
 	Initialize() error
 	InitializeWithPort(port int) error
-	GetPeerChains() ([][]Block, error)
-	RecieveFromNetwork() error
-	BroadcastToNetwork(m Message) error
-	SendToPeer(m Message, p Peer) error
-	PingNetwork() error
-	GenerateMessage(cmd string, d Data) (Message, error)
+	GetPeerNodes() []Peer
+	GetMiddlewarePeer() Peer
 	GetMessageChannel() chan Message
+	RecieveFromNetwork(withTimeout bool) error
+	GenerateMessage(cmd string, data Data) (Message, error)
+	BroadcastMsgToNetwork(cmd string, d Data) error
+	SendMsgToPeer(cmd string, d Data, p Peer) error
+	PingNetwork() error
 	Terminate()
 	PrunePeerNodes()
-	GetMiddlewarePeer() Peer
 }
 
 // NewBlockchain creates and returns a new Blockchain, with the Genesis Block and Components initialized
@@ -80,7 +80,7 @@ func NewBlockchain(com CommunicationComponent, p ProofComponent, con ConsensusCo
 	if err != nil {
 		fmt.Printf("Error initializing Blockchain peer: %+v\n", err)
 		newBlockchain.terminate()
-		return Blockchain{}, nil
+		return Blockchain{}, err
 	}
 
 	return newBlockchain, nil
@@ -98,21 +98,13 @@ func (b *Blockchain) initialize() error {
 		return err
 	}
 
-	// Run consensus to get latest copy of the chain from the network
-	newChain, err := b.consensusComponent.ConsensusMethod(b.communicationComponent)
-	// If there was an error during consensus
+	// Initialize the chain
+	err = b.initializeChain()
+
+	// If there was an error initializing the chain
 	if err != nil {
-		fmt.Printf("Error running consensus during initialization: %+v\n", err)
+		fmt.Printf("Error initializing blockchain: %+v\n", err)
 		return err
-	}
-
-	b.blockchain = newChain
-
-	// If the chain is empty after consensus, then this peer is the first node on the network
-	if len(b.blockchain) == 0 {
-		// Initialize the chain by creating the genesis block
-		log.Println("No existing blockchain discovered, initializing new blockchain...")
-		b.createGenesisBlock()
 	}
 
 	return nil
@@ -132,8 +124,8 @@ func (b *Blockchain) createGenesisBlock() {
 	b.blockchain = append(b.blockchain, genesisBlock)
 }
 
-// getChain returns this Blockchains current chain
-func (b *Blockchain) getChain() []Block {
+// GetChain returns this Blockchains current chain
+func (b *Blockchain) GetChain() []Block {
 	return b.blockchain
 }
 
@@ -163,7 +155,6 @@ func (b *Blockchain) Run() {
 
 	// Sets done equal to true if the user exits the program with ctrl+c, which will case the loop to finish and Run() to exit,
 	// which will cause terminate() to run
-
 	c := make(chan os.Signal)
 	done := false
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -185,14 +176,16 @@ func (b *Blockchain) Run() {
 	}()
 	fmt.Println()
 
+	// Session variables
 	var candidateBlock Block
 	var newBlock Block
 	b.mining = false
 
 	for !done {
 
+		// Get message from peers
 		go func() {
-			err := b.communicationComponent.RecieveFromNetwork()
+			err := b.communicationComponent.RecieveFromNetwork(true)
 			if err != nil {
 				log.Printf("Fatal Error recieving from network: %+v\n", err)
 				done = true
@@ -208,13 +201,13 @@ func (b *Blockchain) Run() {
 
 			case "MINE":
 
-				// Start a new mining session
-				newTransaction := peerMsg.Data
-				b.mining = true
-				candidateBlock = Block{}
-				log.Println("Recieved a new transaction, beginning new mining session...")
-
 				go func() {
+
+					// Start a new mining session
+					newTransaction := peerMsg.Data
+					b.mining = true
+					candidateBlock = Block{}
+					log.Println("Recieved a new transaction, beginning new mining session...")
 
 					// Mine the new block
 					newBlock = b.mine(newTransaction)
@@ -224,17 +217,11 @@ func (b *Blockchain) Run() {
 					if newBlock.Hash != "" {
 						log.Println("Block mined successfully")
 						candidateBlock = newBlock
-
-						toSend, err := b.communicationComponent.GenerateMessage("PROOF", nil)
-						if err != nil {
-							log.Printf("Error generating message: %v\n", err)
-							return
-						}
-
 						log.Println("Sending proof to Middleware...")
-						err = b.communicationComponent.SendToPeer(toSend, b.communicationComponent.GetMiddlewarePeer())
+
+						err := b.communicationComponent.SendMsgToPeer("PROOF", nil, b.communicationComponent.GetMiddlewarePeer())
 						if err != nil {
-							log.Printf("Error sending message to peer: %v\n", err)
+							log.Printf("Error sending message to Middleware: %v\n", err)
 							return
 						}
 					}
@@ -242,26 +229,57 @@ func (b *Blockchain) Run() {
 				}()
 
 			case "HALT":
-				if b.mining {
+				go func() {
 
-					// If mining is true, then this peer was halted whilst still mining the block
-					log.Println("Recieved a Halt, ending current mining session...")
+					if b.mining {
 
-					// Set mining to false which will end the mining session if its still in process,
-					// as another peer has already successfully mined the block
-					b.mining = false
-				} else {
+						// If mining is true, then this peer was halted whilst still mining the block
+						log.Println("Recieved a Halt, ending current mining session...")
 
-					log.Println("Recieved a Halt, but this peer's mining session already ended")
+						// Set mining to false which will end the mining session if its still in process,
+						// as another peer has already successfully mined the block
+						b.mining = false
+					} else {
 
-				}
+						log.Println("Recieved a Halt, but this peer's mining session already ended")
+
+					}
+
+					// Send this peer's copy of the chain so it can broadcast a list of peer chains to all nodes for consensus
+					data := Chain{ChainCopy: b.blockchain}
+
+					err := b.communicationComponent.SendMsgToPeer("PEER_CHAIN", data, b.communicationComponent.GetMiddlewarePeer())
+					if err != nil {
+						log.Printf("Error sending message to Middleware: %v\n", err)
+						return
+					}
+
+				}()
+
+			case "REWARD":
 
 				go func() {
 
-					fmt.Printf("DEBUG - Chain before consensus: %+v\n", b.blockchain)
+					// If this peer was the first peer to successfully mine the block, append the candidate block to this peer's blockchain
+					// so that other nodes will get the block when consensus occurs
+					log.Println("Appending new mined block to local chain")
+					b.blockchain = append(b.blockchain, candidateBlock)
+
+					// Add the reward that was sent to this peer for succesfully
+					// mining the new block to this peer's wallet
+					log.Println("Recieved a reward, adding amount to wallet... ")
+					b.wallet += peerMsg.Data.(Transaction).Amount
+					log.Printf("Updated balance: %d\n", b.wallet)
+				}()
+
+			case "CONSENSUS":
+
+				go func() {
+
+					peerChains := peerMsg.Data.(PeerChains).List
 
 					// Run consensus to get the updated chain, in any case
-					newChain, err := b.consensusComponent.ConsensusMethod(b.communicationComponent)
+					newChain, err := b.consensusComponent.ConsensusMethod(peerChains, b.blockchain)
 					if err != nil {
 						log.Printf("Fatal Error running consensus method: %+v\n", err)
 						done = true
@@ -269,49 +287,33 @@ func (b *Blockchain) Run() {
 
 					b.blockchain = newChain
 
-					fmt.Printf("DEBUG - Chain after consensus: %+v\n", b.blockchain)
+					log.Println("Mining session concluded.")
+
 				}()
-
-			case "REWARD":
-
-				// If this peer was the first peer to successfully mine the block, append the candidate block to this peer's blockchain
-				// so that other nodes will get the block when consensus occurs
-				log.Println("Appending new mined block to local chain")
-				b.blockchain = append(b.blockchain, candidateBlock)
-
-				// Add the reward that was sent to this peer for succesfully
-				// mining the new block to this peer's wallet
-				log.Println("Recieved a reward, adding amount to wallet... ")
-				b.wallet += peerMsg.Data.(*Transaction).Amount
-				log.Printf("Updated balance: %d\n", b.wallet)
 
 			default:
 				log.Println("Warning: Command \"" + peerMsg.Command + "\" not supported")
-
 			}
-
 		default:
 			//There was no message to read, thus do nothing
 		}
 
 		// Ping all peer nodes on the network once every minute
 		if time.Since(lastPing).Minutes() >= 1 {
-			log.Println("Blockchain peer sending pings...")
-			go func() {
-				err := b.communicationComponent.PingNetwork()
-				if err != nil {
-					log.Printf("Error pinging network: %+v\n", err)
-				}
-			}()
-			lastPing = time.Now()
+			err := b.communicationComponent.PingNetwork()
+			if err != nil {
+				log.Printf("Error pinging network: %+v\n", err)
+			} else {
+				lastPing = time.Now()
+			}
 		}
 
 		// If this peer hasn't received a message from another peer for 75 seconds,
 		// then remove that peer from the list of known nodes
-		go b.communicationComponent.PrunePeerNodes()
+		b.communicationComponent.PrunePeerNodes()
 
-		// Timeout for 1 millisecond to limit the number of iterations of the loop to 1 per ms
-		time.Sleep(1 * time.Millisecond)
+		// Timeout for 5 milliseconds to limit the number of iterations of the loop to 20 per s
+		time.Sleep(5 * time.Millisecond)
 
 	}
 }
@@ -341,6 +343,60 @@ func (b *Blockchain) initializeComponents() error {
 	if err != nil {
 		fmt.Printf("Error initializing Blockchain components: %+v", err)
 		return err
+	}
+
+	return nil
+}
+
+func (b *Blockchain) initializeChain() error {
+
+	// Get the current list of peer node chains from the Middlware
+	err := b.communicationComponent.SendMsgToPeer("GET_CHAINS", nil, b.communicationComponent.GetMiddlewarePeer())
+	if err != nil {
+		log.Printf("Error sending message to Middleware: %v\n", err)
+		return err
+	}
+
+	err = b.communicationComponent.RecieveFromNetwork(false)
+	if err != nil {
+		log.Printf("Error recieving from network: %+v\n", err)
+		return err
+	}
+	peerMsg := <-b.communicationComponent.GetMessageChannel()
+	peerChains := peerMsg.Data.(PeerChains).List
+
+	// If the peerChain list is empty, then this peer is the first node on the network
+	if len(peerChains) == 0 {
+		// Initialize the chain by creating the genesis block
+		log.Println("No existing blockchain discovered, initializing new blockchain...")
+		b.createGenesisBlock()
+
+		// Tell the Middleware that a chain has been initialized
+		data := Chain{ChainCopy: b.blockchain}
+
+		err := b.communicationComponent.SendMsgToPeer("PEER_CHAIN", data, b.communicationComponent.GetMiddlewarePeer())
+		if err != nil {
+			log.Printf("Error sending message to Middleware: %v\n", err)
+			return err
+		}
+
+	} else {
+		// Else there are existing peer chains, so run consensus to get the right copy of the chain
+
+		// Run consensus
+		log.Println("Received peer chains, running consensus...")
+		newChain, err := b.consensusComponent.ConsensusMethod(peerChains, b.blockchain)
+
+		// If there was an error during consensus
+		if err != nil {
+			fmt.Printf("Error running consensus during initialization: %+v\n", err)
+			return err
+		}
+
+		b.blockchain = newChain
+
+		log.Printf("Chain copy after consensus: %+v\n", b.blockchain)
+
 	}
 
 	return nil
