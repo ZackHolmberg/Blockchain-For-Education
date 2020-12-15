@@ -34,9 +34,12 @@
 
 ## November 22nd - December 5th
 
-- Continued development of project material:
-  - Implemented the various blockchain component functionality
-  - Implemented the middleware to handle message between server and client
-  - Implemented the blockchain transaction client
+- Continued development of the various blockchain component functionality
+- Began implementation of the middleware to handle message between server and client
 
 ## December 6th - November 19th
+
+- Continued and finished development of the blockchain Peer, the components and the Middleware
+- Implemented the Blockchain transaction Client
+- Created project presentation
+- Conducted project presnetation
