@@ -42,4 +42,4 @@
 - Continued and finished development of the blockchain Peer, the components and the Middleware
 - Implemented the Blockchain transaction Client
 - Created project presentation
-- Conducted project presnetation
+- Conducted project presentation
