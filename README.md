@@ -6,6 +6,8 @@ Feel free to send [me](mailto:holmbezt@myumanitoba.ca) any feedback that you may
 
 Click [here](https://github.com/ZackHolmberg/Blockchain-Honours-Project/blob/main/Blockchain%20Architecture.png) to view the Blockchain Architecture.
 
+To view a presentation on the project, find a PDF version [here](Presentation.pdf) and a video version [here](Presentation.mp4).
+
 Contact information is as follows:
 
 Name: Zack Holmberg  
