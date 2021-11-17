@@ -11,9 +11,9 @@ import (
 
 // Message is the struct that is marshalled/demarshalled between peers to communicate
 type Message struct {
-	From    Peer   `json:"from"`
-	Command string `json:"command"`
-	Data    Data   `json:"data,omitempty"`
+	From    PeerAddress `json:"from"`
+	Command string      `json:"command"`
+	Data    Data        `json:"data,omitempty"`
 }
 
 // UnmarshalJSON is a custom JSON unmarshaller
@@ -35,7 +35,11 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 	newAddress := net.UDPAddr{IP: ip, Port: port}
 	lastMessageTime := from["lastMessageTime"].(string)
 	parsedLastMessageTime, err := time.Parse(time.RFC3339, lastMessageTime)
-	newPeer := Peer{Address: newAddress, LastMessageTime: parsedLastMessageTime}
+	if err != nil {
+		log.Println("Failed to parse time:", err.Error())
+	}
+
+	newPeer := PeerAddress{Address: newAddress, LastMessageTime: parsedLastMessageTime}
 
 	// Umarshall the command
 	command := result["command"].(string)
@@ -49,6 +53,7 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 
 		dataObject := data.(map[string]interface{})
 		if val, ok := dataObject["from"]; ok {
+
 			// Then the data is a transaction, so unmarshal into a Transaction struct
 			from := val.(string)
 			to := dataObject["to"].(string)
@@ -60,15 +65,18 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 			list := val.([]interface{})
 			newChain := Chain{ChainCopy: []Block{}}
 
+			//Umarshal the chain
 			for _, block := range list {
 				blockMap := block.(map[string]interface{})
 				dataMap := blockMap["Data"].(map[string]interface{})
+
 				// We can assume that the Data will be of type Transaction, for now
 				from := dataMap["from"].(string)
 				to := dataMap["to"].(string)
 				amount := int(dataMap["amount"].(float64))
 				newTransaction := Transaction{From: from, To: to, Amount: amount}
 
+				// Umarshal the rest of the block
 				index := int(blockMap["Index"].(float64))
 				timestamp := blockMap["Timestamp"].(string)
 				prevHash := blockMap["PrevHash"].(string)
@@ -89,16 +97,19 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 				for _, chain := range list {
 					tempList := []Block{}
 
+					//Umarshal the chain
 					for _, block := range chain.([]interface{}) {
 						blockMap := block.(map[string]interface{})
 
 						dataMap := blockMap["Data"].(map[string]interface{})
+
 						// We can assume that the Data will be of type Transaction, for now
 						from := dataMap["from"].(string)
 						to := dataMap["to"].(string)
 						amount := int(dataMap["amount"].(float64))
 						newTransaction := Transaction{From: from, To: to, Amount: amount}
 
+						// Umarshal the rest of the block
 						index := int(blockMap["Index"].(float64))
 						timestamp := blockMap["Timestamp"].(string)
 						prevHash := blockMap["PrevHash"].(string)
@@ -121,7 +132,7 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 			}
 		} else {
 			// Else the data is of an unsupported type
-			err := errors.New("Error unmarshalling Data object: unsupported type")
+			err := errors.New("error unmarshalling Data object: unsupported type")
 			return err
 		}
 	}

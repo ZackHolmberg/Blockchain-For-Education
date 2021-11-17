@@ -18,15 +18,15 @@ import (
 
 // Communicator implements CommunicationsComponent and facilities Blockchain communication
 type Communicator struct {
-	self        *zeroconf.Server
-	socket      *net.UDPConn
-	peerNodes   []Peer
-	peerMessage chan Message
-	middleware  Peer
+	self          *zeroconf.Server
+	socket        *net.UDPConn
+	peerAddresses []PeerAddress
+	peerMessage   chan Message
+	middleware    PeerAddress
 }
 
-// Peer represents a peer on the network and contains metadata about that peer
-type Peer struct {
+// PeerAddress represents a peer on the network and contains metadata about that peer
+type PeerAddress struct {
 	Address         net.UDPAddr `json:"address"`
 	LastMessageTime time.Time   `json:"lastMessageTime"`
 }
@@ -37,12 +37,12 @@ func (c Communicator) GetMessageChannel() chan Message {
 }
 
 // GetPeerNodes is the interface retriever method that returns this node's list of peers
-func (c Communicator) GetPeerNodes() []Peer {
-	return c.peerNodes
+func (c Communicator) GetPeerNodes() []PeerAddress {
+	return c.peerAddresses
 }
 
 // GetMiddlewarePeer is the interface retriever method that returns a pointer to the Middlware peer
-func (c Communicator) GetMiddlewarePeer() Peer {
+func (c Communicator) GetMiddlewarePeer() PeerAddress {
 	return c.middleware
 }
 
@@ -80,14 +80,14 @@ func (c *Communicator) RecieveFromNetwork(withTimeout bool) error {
 	// fmt.Printf("DEBUG - Unmarshalled message from socket: %+v\n", message)
 
 	// If the peer that sent the message is not a known peer, add it to the peerNodes list
-	if !knownPeer(c.peerNodes, message.From) {
-		// fmt.Println("DEBUG - Peer is not known")
-		c.peerNodes = append(c.peerNodes, message.From)
+	if !knownPeer(c.peerAddresses, message.From) {
+		fmt.Printf("DEBUG - Peer is not known: %v\n", message.From)
+		c.peerAddresses = append(c.peerAddresses, message.From)
 	}
 	// fmt.Println("DEBUG - Checked if known peer")
 
 	// Update the known peer's LastMessage value
-	c.peerNodes = updateLastMessage(c.peerNodes, message.From)
+	c.peerAddresses = updateLastMessage(c.peerAddresses, message.From)
 	// fmt.Println("DEBUG - Updated last message")
 
 	c.peerMessage <- *message
@@ -99,12 +99,18 @@ func (c *Communicator) RecieveFromNetwork(withTimeout bool) error {
 // PingNetwork is the interface method that sends a ping to all known peer nodes
 func (c Communicator) PingNetwork() error {
 
-	if len(c.peerNodes) > 0 {
+	if len(c.peerAddresses) > 0 {
 
 		log.Println("Broadcasting pings...")
 
+		toSend, err := c.GenerateMessage("PING", nil)
+		if err != nil {
+			log.Printf("Error generating message: %v\n", err)
+			return err
+		}
+
 		// call BroadcastToNetwork to broadcast ping message
-		err := c.BroadcastMsgToNetwork("PING", nil)
+		err = c.BroadcastMsgToNetwork(toSend)
 		if err != nil {
 			log.Printf("Error broadcasting pings: %v", err)
 			return err
@@ -181,20 +187,14 @@ func (c Communicator) Terminate() {
 
 // BroadcastMsgToNetwork is the interface method that uses
 // helper methods to broadcast messages
-func (c Communicator) BroadcastMsgToNetwork(cmd string, d Data) error {
-
-	toSend, err := c.GenerateMessage(cmd, d)
-	if err != nil {
-		log.Printf("Error generating message: %v\n", err)
-		return err
-	}
+func (c Communicator) BroadcastMsgToNetwork(m Message) error {
 
 	//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
 	temp, _ := net.LookupIP("localhost")
-	toSend.From.Address.IP = temp[0]
+	m.From.Address.IP = temp[0]
 	// =====================================================
 
-	err = c.broadcastToNetwork(toSend)
+	err := c.broadcastToNetwork(m)
 	if err != nil {
 		log.Printf("Error broadcasting message: %v\n", err)
 		return err
@@ -205,20 +205,14 @@ func (c Communicator) BroadcastMsgToNetwork(cmd string, d Data) error {
 
 // SendMsgToPeer is the interface method that uses
 // helper methods to send a message to a peer
-func (c Communicator) SendMsgToPeer(cmd string, d Data, p Peer) error {
-
-	toSend, err := c.GenerateMessage(cmd, d)
-	if err != nil {
-		log.Printf("Error generating message: %v\n", err)
-		return err
-	}
+func (c Communicator) SendMsgToPeer(m Message, p PeerAddress) error {
 
 	//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
 	temp, _ := net.LookupIP("localhost")
-	toSend.From.Address.IP = temp[0]
+	m.From.Address.IP = temp[0]
 	// =====================================================
 
-	err = c.sendToPeer(toSend, p)
+	err := c.sendToPeer(m, p)
 	if err != nil {
 		log.Printf("Error sending message to Peer: %v\n", err)
 		return err
@@ -227,15 +221,16 @@ func (c Communicator) SendMsgToPeer(cmd string, d Data, p Peer) error {
 	return nil
 }
 
-// PrunePeerNodes is the interface method that removes nodes from the peerNodes list which  have
+// PrunePeerNodes is the interface method that removes nodes from the peerNodes list which have
 // not sent a message within the previous 75 seconds, as we assume that node to have gone down
 // in this case
 func (c *Communicator) PrunePeerNodes() {
 
-	for i, peer := range c.peerNodes {
+	for i, peer := range c.peerAddresses {
 		if time.Since(peer.LastMessageTime).Seconds() >= 75 {
 			log.Printf("Pruning peer node: %+v\n", peer)
-			c.peerNodes = removeFromList(c.peerNodes, peer, i)
+			c.peerAddresses = removeFromList(c.peerAddresses, peer, i)
+			return
 		}
 	}
 
@@ -250,7 +245,7 @@ func (c *Communicator) GenerateMessage(cmd string, data Data) (Message, error) {
 		return Message{}, err
 	}
 
-	newMessage := Message{Command: cmd, Data: data, From: Peer{Address: addr, LastMessageTime: time.Now()}}
+	newMessage := Message{Command: cmd, Data: data, From: PeerAddress{Address: addr, LastMessageTime: time.Now()}}
 
 	return newMessage, nil
 }
@@ -374,10 +369,14 @@ func (c *Communicator) discoverPeers(addr net.UDPAddr) error {
 				continue
 			}
 
-			newPeer := Peer{Address: *newAddr, LastMessageTime: time.Now()}
+			newPeer := PeerAddress{Address: *newAddr, LastMessageTime: time.Now()}
 
 			//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
 			temp, err := net.LookupIP("localhost")
+			if err != nil {
+				log.Println("Failed to LookupIP:", err.Error())
+				continue
+			}
 			newPeer.Address.IP = temp[0]
 			// =====================================================
 
@@ -387,7 +386,8 @@ func (c *Communicator) discoverPeers(addr net.UDPAddr) error {
 			}
 
 			// Append the new peer to the Communicator's list of known peer nodes
-			c.peerNodes = append(c.peerNodes, newPeer)
+			fmt.Printf("DEBUG - Adding new peer node: %v\n", newPeer)
+			c.peerAddresses = append(c.peerAddresses, newPeer)
 
 		}
 	}(entries)
@@ -405,7 +405,7 @@ func (c *Communicator) discoverPeers(addr net.UDPAddr) error {
 	// Wait some additional time to see debug messages on go routine shutdown.
 	time.Sleep(1 * time.Second)
 
-	fmt.Printf("Discovered peer nodes: %+v\n", c.peerNodes)
+	fmt.Printf("Discovered peer nodes: %+v\n", c.peerAddresses)
 
 	return nil
 
@@ -425,7 +425,7 @@ func (c Communicator) broadcastToNetwork(msg Message) error {
 	// fmt.Printf("DEBUG - Broadcasting to peer list: %+v\n", c.peerNodes)
 
 	// Send the message to each known peer node
-	for _, peer := range c.peerNodes {
+	for _, peer := range c.peerAddresses {
 
 		//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
 		temp, _ := net.LookupIP("localhost")
@@ -447,7 +447,7 @@ func (c Communicator) broadcastToNetwork(msg Message) error {
 
 // sendToPeer is the helper method that sends a
 // UDP message to one peer on the network
-func (c Communicator) sendToPeer(msg Message, p Peer) error {
+func (c Communicator) sendToPeer(msg Message, p PeerAddress) error {
 
 	// Marshal the Message into JSON
 	endcodedMessage, err := json.Marshal(msg)
@@ -474,7 +474,7 @@ func (c Communicator) sendToPeer(msg Message, p Peer) error {
 
 // knownPeer takes a slice of peers and looks for a particular peer in it. If found it will
 // return true, otherwise it will return false.
-func knownPeer(slice []Peer, p Peer) bool {
+func knownPeer(slice []PeerAddress, p PeerAddress) bool {
 	for _, c := range slice {
 		if c.Address.IP.String() == p.Address.IP.String() && c.Address.Port == p.Address.Port {
 			return true
@@ -504,14 +504,14 @@ func getUDPAddr(c *net.UDPConn) (net.UDPAddr, error) {
 	return addr, nil
 }
 
-func removeFromList(peers []Peer, p Peer, i int) []Peer {
+func removeFromList(peers []PeerAddress, p PeerAddress, i int) []PeerAddress {
 
 	peers[i] = peers[len(peers)-1]
-	peers[len(peers)-1] = Peer{}
+	peers[len(peers)-1] = PeerAddress{}
 	return peers[:len(peers)-1]
 }
 
-func updateLastMessage(p []Peer, t Peer) []Peer {
+func updateLastMessage(p []PeerAddress, t PeerAddress) []PeerAddress {
 
 	newList := p
 	for i := range newList {

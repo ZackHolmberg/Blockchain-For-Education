@@ -17,10 +17,10 @@ func init() {
 func main() {
 
 	// start middleware
-	fmt.Println("\nStarting Middleware...")
+	fmt.Println("\nStarting Blockchain Middleware...")
 	m, err := blockchain.NewMiddleware(communicator, 8080, 8090)
 	if err != nil {
-		fmt.Printf("Fatal error creating Middleware: %+v\n", err)
+		fmt.Printf("Fatal error creating Blockchain Middleware: %+v\n", err)
 	} else {
 		m.Run()
 	}

@@ -7,13 +7,11 @@ import (
 
 var communicator *blockchain.Communicator
 var proofOfWork blockchain.ProofOfWork
-var longestChain blockchain.LongestChain
 
 func init() {
 
 	communicator = &blockchain.Communicator{}
-	proofOfWork = blockchain.ProofOfWork{ProofDifficulty: 2}
-	longestChain = blockchain.LongestChain{}
+	proofOfWork = blockchain.ProofOfWork{ProofDifficulty: 6}
 }
 
 // ============================ Main ============================
@@ -21,10 +19,10 @@ func init() {
 func main() {
 
 	// start blockchain
-	fmt.Println("\nStarting Blockchain...")
-	bc, err := blockchain.NewBlockchain(communicator, proofOfWork, longestChain)
+	fmt.Println("\nStarting Blockchain Peer...")
+	bc, err := blockchain.NewPeer(communicator, proofOfWork)
 	if err != nil {
-		fmt.Printf("Fatal error creating Blockchain: %+v\n", err)
+		fmt.Printf("Fatal error creating Blockchain Peer: %+v\n", err)
 	} else {
 		bc.Run()
 	}
