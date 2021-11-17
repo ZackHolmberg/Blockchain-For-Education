@@ -18,7 +18,6 @@ type Node interface {
 
 	initialize() error
 	mine()
-	getChain()
 	createGenesisNode()
 	terminate()
 	initializeComponents() error
@@ -29,8 +28,7 @@ type Blockchain struct {
 	communicationComponent CommunicationComponent
 	proofComponent         ProofComponent
 	consensusComponent     ConsensusComponent
-	genesisBlock           *Block
-	blockchain             []Block
+	chain                  []Block
 	mining                 bool
 	wallet                 int
 }
@@ -120,13 +118,7 @@ func (b *Blockchain) createGenesisBlock() {
 	genesisBlock.PrevHash = ""
 	genesisBlock.Hash = b.proofComponent.ProofMethod(genesisBlock, true)
 
-	b.genesisBlock = &genesisBlock
-	b.blockchain = append(b.blockchain, genesisBlock)
-}
-
-// GetChain returns this Blockchains current chain
-func (b *Blockchain) GetChain() []Block {
-	return b.blockchain
+	b.chain = append(b.chain, genesisBlock)
 }
 
 // mine implements functionality to mine a new block to the chain
@@ -134,10 +126,10 @@ func (b *Blockchain) mine(data Data) Block {
 
 	//Create a new block
 	newBlock := Block{
-		Index:     len(b.blockchain),
+		Index:     len(b.chain),
 		Timestamp: time.Now().String(),
 		Data:      data,
-		PrevHash:  b.blockchain[len(b.blockchain)-1].Hash,
+		PrevHash:  b.chain[len(b.chain)-1].Hash,
 		Hash:      ""}
 
 	//Calculate this block's proof
@@ -246,7 +238,7 @@ func (b *Blockchain) Run() {
 					}
 
 					// Send this peer's copy of the chain so it can broadcast a list of peer chains to all nodes for consensus
-					data := Chain{ChainCopy: b.blockchain}
+					data := Chain{ChainCopy: b.chain}
 
 					err := b.communicationComponent.SendMsgToPeer("PEER_CHAIN", data, b.communicationComponent.GetMiddlewarePeer())
 					if err != nil {
@@ -263,7 +255,7 @@ func (b *Blockchain) Run() {
 					// If this peer was the first peer to successfully mine the block, append the candidate block to this peer's blockchain
 					// so that other nodes will get the block when consensus occurs
 					log.Println("Appending new mined block to local chain")
-					b.blockchain = append(b.blockchain, candidateBlock)
+					b.chain = append(b.chain, candidateBlock)
 
 					// Add the reward that was sent to this peer for succesfully
 					// mining the new block to this peer's wallet
@@ -278,14 +270,17 @@ func (b *Blockchain) Run() {
 
 					peerChains := peerMsg.Data.(PeerChains).List
 
+					fmt.Printf("\n\nDEBUG - Chain before consensus: %+v\n\n\n", b.chain)
+
 					// Run consensus to get the updated chain, in any case
-					newChain, err := b.consensusComponent.ConsensusMethod(peerChains, b.blockchain)
+					newChain, err := b.consensusComponent.ConsensusMethod(peerChains, b.chain)
 					if err != nil {
 						log.Printf("Fatal Error running consensus method: %+v\n", err)
 						done = true
 					}
 
-					b.blockchain = newChain
+					b.chain = newChain
+					fmt.Printf("\n\nDEBUG - Chain after consensus: %+v\n\n\n", b.chain)
 
 					log.Println("Mining session concluded.")
 
@@ -299,7 +294,7 @@ func (b *Blockchain) Run() {
 		}
 
 		// Ping all peer nodes on the network once every minute
-		if time.Since(lastPing).Minutes() >= 1 {
+		if time.Since(lastPing).Seconds() >= 10 {
 			err := b.communicationComponent.PingNetwork()
 			if err != nil {
 				log.Printf("Error pinging network: %+v\n", err)
@@ -333,15 +328,25 @@ func (b *Blockchain) initializeComponents() error {
 	// Initialize the communication component
 	err := b.communicationComponent.Initialize()
 
+	if err != nil {
+		fmt.Printf("Error initializing Blockchain communication component: %+v", err)
+		return err
+	}
+
 	// Initialize the consensus component
 	err = b.consensusComponent.Initialize()
+
+	if err != nil {
+		fmt.Printf("Error initializing Blockchain consensus component: %+v", err)
+		return err
+	}
 
 	// Initialize the proof component
 	err = b.proofComponent.Initialize()
 
 	// If there was an error initializing one of the components
 	if err != nil {
-		fmt.Printf("Error initializing Blockchain components: %+v", err)
+		fmt.Printf("Error initializing Blockchain proof component: %+v", err)
 		return err
 	}
 
@@ -372,7 +377,7 @@ func (b *Blockchain) initializeChain() error {
 		b.createGenesisBlock()
 
 		// Tell the Middleware that a chain has been initialized
-		data := Chain{ChainCopy: b.blockchain}
+		data := Chain{ChainCopy: b.chain}
 
 		err := b.communicationComponent.SendMsgToPeer("PEER_CHAIN", data, b.communicationComponent.GetMiddlewarePeer())
 		if err != nil {
@@ -385,7 +390,7 @@ func (b *Blockchain) initializeChain() error {
 
 		// Run consensus
 		log.Println("Received peer chains, running consensus...")
-		newChain, err := b.consensusComponent.ConsensusMethod(peerChains, b.blockchain)
+		newChain, err := b.consensusComponent.ConsensusMethod(peerChains, b.chain)
 
 		// If there was an error during consensus
 		if err != nil {
@@ -393,9 +398,9 @@ func (b *Blockchain) initializeChain() error {
 			return err
 		}
 
-		b.blockchain = newChain
+		b.chain = newChain
 
-		log.Printf("Chain copy after consensus: %+v\n", b.blockchain)
+		log.Printf("Chain copy after consensus: %+v\n", b.chain)
 
 	}
 

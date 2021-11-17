@@ -1,8 +1,9 @@
 package main
 
 import (
-	"blockchain"
 	"fmt"
+
+	"github.com/ZackHolmberg/Blockchain-Honours-Project/COMP-3010/src/blockchain"
 )
 
 var communicator *blockchain.Communicator
@@ -12,7 +13,7 @@ var longestChain blockchain.LongestChain
 func init() {
 
 	communicator = &blockchain.Communicator{}
-	proofOfWork = blockchain.ProofOfWork{ProofDifficulty: 2}
+	proofOfWork = blockchain.ProofOfWork{ProofDifficulty: 5}
 	longestChain = blockchain.LongestChain{}
 }
 

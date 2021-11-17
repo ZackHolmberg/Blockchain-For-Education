@@ -31,7 +31,7 @@
 - Candidate 3010 topics for blockchain application include:
   - Error handling
     - Peer-to-peer can be used to teach error handling
-    - Students can identify error conditiions
+    - Students can identify error conditions
   - Can use the chain to provide students with the opportunity to write/debug code alongside others working on the same code (live debugging/error handling)
   - Important to find the line/distinguish between what will be provided to students and what will be left for students to figure out
   - Implement election/consensus algorithm

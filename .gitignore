@@ -5,3 +5,4 @@ src
 !src/
 peerBinary
 middlewareBinary
+bin

@@ -378,6 +378,10 @@ func (c *Communicator) discoverPeers(addr net.UDPAddr) error {
 
 			//=========== TODO: REMOVE AFTER DEVELOPMENT ===========
 			temp, err := net.LookupIP("localhost")
+			if err != nil {
+				log.Println("Failed to LookupIP:", err.Error())
+				continue
+			}
 			newPeer.Address.IP = temp[0]
 			// =====================================================
 

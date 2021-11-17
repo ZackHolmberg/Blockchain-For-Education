@@ -128,13 +128,13 @@ func (m *Middleware) Run() {
 	for !done {
 
 		// Get message from peers
-		// go func() {
-		err := m.communicationComponent.RecieveFromNetwork(false)
-		if err != nil {
-			log.Printf("Fatal Error recieving from network: %+v\n", err)
-			done = true
-		}
-		// }()
+		go func() {
+			err := m.communicationComponent.RecieveFromNetwork(true)
+			if err != nil {
+				log.Printf("Fatal Error recieving from network: %+v\n", err)
+				done = true
+			}
+		}()
 
 		select {
 		case peerMsg := <-m.communicationComponent.GetMessageChannel():
@@ -211,7 +211,7 @@ func (m *Middleware) Run() {
 
 		// If !peersMining and there is at least one transaction to be mind, pop a transaction
 		// from the queue and broacast to network, starting a new mining session
-		if !peersMining && m.transactionQueue.Len() > 0 {
+		if !peersMining && m.transactionQueue.Len() > 0 && len(m.communicationComponent.GetPeerNodes()) > 0 {
 			log.Println("Beginning a new mining session...")
 
 			// Pop a Message from the transactionQueue
@@ -289,7 +289,7 @@ func (m *Middleware) Run() {
 		}
 
 		// Ping all peer nodes on the network once every minute
-		if time.Since(lastPing).Minutes() >= 1 {
+		if time.Since(lastPing).Seconds() >= 10 {
 			err := m.communicationComponent.PingNetwork()
 			if err != nil {
 				log.Printf("Error pinging network: %+v\n", err)
@@ -301,7 +301,7 @@ func (m *Middleware) Run() {
 		// then remove that peer from the list of known nodes
 		m.communicationComponent.PrunePeerNodes()
 
-		// Timeout for 5 milliseconds to limit the number of iterations of the loop to 20 per s
+		// Timeout for 5 milliseconds to limit the number of iterations of the loop to 20 per second
 		time.Sleep(5 * time.Millisecond)
 
 	}

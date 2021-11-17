@@ -27,11 +27,11 @@ func (p ProofOfWork) Terminate() {
 
 // ProofMethod is the interface method that calls this component's proof method
 func (p ProofOfWork) ProofMethod(b Block, m bool) string {
-	return proofOfWork(p, b, m)
+	return p.proofOfWork(b, m)
 }
 
 // proofOfWork is the proof of work algorithm that
-func proofOfWork(p ProofOfWork, b Block, mining bool) string {
+func (p ProofOfWork) proofOfWork(b Block, mining bool) string {
 
 	nonce := 0
 	proof := ""
