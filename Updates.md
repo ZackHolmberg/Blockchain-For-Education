@@ -29,7 +29,7 @@
 ## November 8th - November 21st
 
 - Refactored and finalized Blockchain formal design and high-level architecture.
-- Created Blockchain architectural diagram. Can be viewed [here](https://github.com/ZackHolmberg/Blockchain-Honours-Project/blob/main/Blockchain%20Architecture.pdf)
+- Created Blockchain architectural diagram. Can be viewed [here](https://github.com/ZackHolmberg/Blockchain-Honours-Project/blob/main/Blockchain%20Architecture.png)
 - Re-approached implementation of COMP 3010 material based on new architecture.
 
 ## November 22nd - December 5th
@@ -42,4 +42,4 @@
 - Continued and finished development of the blockchain Peer, the components and the Middleware
 - Implemented the Blockchain transaction Client
 - Created project presentation
-- Conducted project presnetation
+- Conducted project presentation
