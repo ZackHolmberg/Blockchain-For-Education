@@ -1,9 +1,8 @@
 package main
 
 import (
+	"blockchain"
 	"fmt"
-
-	"github.com/ZackHolmberg/Blockchain-Honours-Project/COMP-3010/src/blockchain"
 )
 
 var communicator *blockchain.Communicator
@@ -18,10 +17,10 @@ func init() {
 func main() {
 
 	// start middleware
-	fmt.Println("\nStarting Middleware...")
+	fmt.Println("\nStarting Blockchain Middleware...")
 	m, err := blockchain.NewMiddleware(communicator, 8080, 8090)
 	if err != nil {
-		fmt.Printf("Fatal error creating Middleware: %+v\n", err)
+		fmt.Printf("Fatal error creating Blockchain Middleware: %+v\n", err)
 	} else {
 		m.Run()
 	}

@@ -11,9 +11,9 @@ import (
 
 // Message is the struct that is marshalled/demarshalled between peers to communicate
 type Message struct {
-	From    Peer   `json:"from"`
-	Command string `json:"command"`
-	Data    Data   `json:"data,omitempty"`
+	From    PeerAddress `json:"from"`
+	Command string      `json:"command"`
+	Data    Data        `json:"data,omitempty"`
 }
 
 // UnmarshalJSON is a custom JSON unmarshaller
@@ -39,7 +39,7 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 		log.Println("Failed to parse time:", err.Error())
 	}
 
-	newPeer := Peer{Address: newAddress, LastMessageTime: parsedLastMessageTime}
+	newPeer := PeerAddress{Address: newAddress, LastMessageTime: parsedLastMessageTime}
 
 	// Umarshall the command
 	command := result["command"].(string)

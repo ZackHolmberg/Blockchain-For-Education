@@ -17,8 +17,9 @@ type Middleware struct {
 	communicationComponent CommunicationComponent
 	transactionQueue       *list.List
 	newTransaction         chan Transaction
-	peerChains             PeerChains
 }
+
+// example request: curl -X POST -d 'from=jerry&to=bob&amount=10' localhost:8090/newTransaction
 
 func (m *Middleware) handleNewTransaction(w http.ResponseWriter, r *http.Request) {
 
@@ -27,13 +28,16 @@ func (m *Middleware) handleNewTransaction(w http.ResponseWriter, r *http.Request
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
 	}
-
 	from := r.FormValue("from")
 	to := r.FormValue("to")
+
+	fmt.Fprintf(w, "%+v\n", r.Form)
+	fmt.Fprintf(w, "from: %s, to: %s\n", from, to)
+
 	amount, err := strconv.Atoi(r.FormValue("amount"))
 	if err != nil {
-		log.Printf("Error converting int to string: %v", err)
-		fmt.Fprintf(w, "Something bad occured, please try your request again!")
+		log.Printf("Error converting int to string: %v\n", err)
+		fmt.Fprintf(w, "Something bad occured, please try your request again!\n")
 		return
 	}
 
@@ -64,7 +68,7 @@ func NewMiddleware(com CommunicationComponent, udpPort int, serverPort int) (Mid
 	return newMiddleware, nil
 }
 
-// Initialize initializes the middleware by starting the request handlers,
+// Initializes the middleware by starting the request handlers,
 // initializing its components and serving itself on the network
 func (m *Middleware) Initialize(udpPort int, serverPort int) error {
 
@@ -81,9 +85,6 @@ func (m *Middleware) Initialize(udpPort int, serverPort int) error {
 	// Initialize Transaction channel
 	m.newTransaction = make(chan Transaction)
 
-	// Intialize PeerChains struct
-	m.peerChains = PeerChains{}
-
 	// Initialize newTransaction request handler
 	http.HandleFunc("/newTransaction", m.handleNewTransaction)
 
@@ -93,7 +94,7 @@ func (m *Middleware) Initialize(udpPort int, serverPort int) error {
 	return nil
 }
 
-// Run utilizes its component and the http package to receive requests
+// Utilizes its component and the http package to receive requests
 // from clients and send/recieve messages to blockchain peers on the p2p network
 func (m *Middleware) Run() {
 
@@ -119,11 +120,11 @@ func (m *Middleware) Run() {
 			log.Printf("Error pinging network: %+v\n", err)
 		}
 	}()
+
 	fmt.Println()
 
 	// Session variables
 	peersMining, proofFound, running := false, false, false
-	newPeerChains := [][]Block{}
 
 	for !done {
 
@@ -156,7 +157,13 @@ func (m *Middleware) Run() {
 					// which will become the new global chain once consensus is run
 					newData := Transaction{From: "", To: "", Amount: 5}
 
-					err := m.communicationComponent.SendMsgToPeer("REWARD", newData, peerMsg.From)
+					toSend, err := m.communicationComponent.GenerateMessage("REWARD", newData)
+					if err != nil {
+						log.Printf("Fatal error generating message: %v\n", err)
+						done = true
+					}
+
+					err = m.communicationComponent.SendMsgToPeer(toSend, peerMsg.From)
 					if err != nil {
 						// This would be a fatal error because if a peer doesn't recieve the reward,
 						// it wont add the new block to its chain, and the block will get lost if the next session begins
@@ -166,42 +173,6 @@ func (m *Middleware) Run() {
 
 				}
 
-				// Else this was not the first proof found, so ignore this message
-
-			case "PEER_CHAIN":
-
-				go func() {
-
-					// Get the chain copy that was sent by the peer
-					chain := peerMsg.Data.(Chain)
-
-					// Append it to the new list of peer chains
-					newPeerChains = append(newPeerChains, chain.ChainCopy)
-
-					// If we're initializing the chain for the first time,
-					// immediately set the Middleware's chain list to the new chain
-					if len(m.peerChains.List) == 0 {
-						m.peerChains.List = newPeerChains
-						log.Println("Chain initialized")
-					}
-
-					log.Printf("\n\nNew peer chain list: %+v\n\n\n", newPeerChains)
-
-				}()
-
-			case "GET_CHAINS":
-
-				go func() {
-
-					err := m.communicationComponent.SendMsgToPeer("CONSENSUS", m.peerChains, peerMsg.From)
-					if err != nil {
-						// Not a fatal error since consensus can still occur amongst other nodes, and the
-						// peer who didn't recieve a chain copy will deal with it but the Middleware should keep running
-						log.Printf("Fatal Error sending reward to peer: %v", err)
-					}
-
-				}()
-
 			default:
 				log.Println("Warning: Command \"" + peerMsg.Command + "\" not supported")
 			}
@@ -209,28 +180,32 @@ func (m *Middleware) Run() {
 			//There was no message to read, thus do nothing
 		}
 
-		// If !peersMining and there is at least one transaction to be mind, pop a transaction
+		// If we aren't already in a mining session and there is at least one transaction to be mined, pop a transaction
 		// from the queue and broacast to network, starting a new mining session
 		if !peersMining && m.transactionQueue.Len() > 0 && len(m.communicationComponent.GetPeerNodes()) > 0 {
+
 			log.Println("Beginning a new mining session...")
 
 			// Pop a Message from the transactionQueue
 			toMine := m.pop()
 
+			toSend, err := m.communicationComponent.GenerateMessage("MINE", toMine)
+			if err != nil {
+				log.Printf("Fatal error generating message: %v\n", err)
+				done = true
+			}
+
 			// Broadcast the new transaction to the peers on the network
-			err := m.communicationComponent.BroadcastMsgToNetwork("MINE", toMine)
+			err = m.communicationComponent.BroadcastMsgToNetwork(toSend)
 			if err != nil {
 				// This would be a fatal error
-				log.Printf("Error broadcasting message: %v", err)
+				log.Printf("Fatal error broadcasting message: %v", err)
 				done = true
 			}
 			// Set peersMining to true and proofFound to false since the above function call will cause the blockchain
 			// peers to begin mining the new transaction, starting a new mining session
 			peersMining = true
 			proofFound = false
-
-			// Reset the list of peer chains
-			newPeerChains = nil
 
 		} else if peersMining && proofFound && !running {
 			// End the mining session. Running to be set before the goroutine starts or else it will
@@ -243,42 +218,28 @@ func (m *Middleware) Run() {
 				// to halt mining and cause consensus to be run so every peer gets a copy of the new longest chain
 				log.Println("Broadcasting halt message to peers...")
 
+				toSend, err := m.communicationComponent.GenerateMessage("HALT", nil)
+				if err != nil {
+					// This would be a fatal error
+					log.Printf("Fatal error generating message: %v\n", err)
+					done = true
+				}
+
 				// Broadcast the halt message to the peers on the network. All peers will send their chain copies when they
 				// recieve a halt
-				err := m.communicationComponent.BroadcastMsgToNetwork("HALT", nil)
+				err = m.communicationComponent.BroadcastMsgToNetwork(toSend)
 				if err != nil {
 					// This would be a fatal error
 					log.Printf("Error broadcasting message: %v", err)
 					done = true
 				}
 
-				// Wait until all peers have sent their chain copies or the timeout length has pssed
-				start := time.Now()
-				for len(newPeerChains) != len(m.communicationComponent.GetPeerNodes()) || time.Since(start).Seconds() >= 5 {
-				}
-
-				// Now consensus should occur, so trigger it with a broadcast
-				newData := PeerChains{List: newPeerChains}
-
-				err = m.communicationComponent.BroadcastMsgToNetwork("CONSENSUS", newData)
-
-				if err != nil {
-					// This would be a fatal error because if consensus doesn't run,
-					// the newly mined block will be lost
-					log.Printf("Fatal Error triggering consensus: %v", err)
-					done = true
-				}
-
-				// Timeout for 3 seconds to give peers time to conclude their mining sessions ans
+				// Timeout for 5 seconds to give peers time to conclude their mining sessions and
 				// send their copies of the chain to the middleware to distribute for consensus
-				log.Println("Timing out for 3 seconds while peers run consensus...")
-				time.Sleep(3 * time.Second)
-
-				// Set the middleware's peer chains list to the new list that was used for consensus
-				m.peerChains = newData
+				log.Println("Timing out for 5 seconds while peers distribute new chain...")
+				time.Sleep(5 * time.Second)
 
 				// Reset state
-				newPeerChains = nil
 				running = false
 				peersMining = false
 
@@ -289,7 +250,7 @@ func (m *Middleware) Run() {
 		}
 
 		// Ping all peer nodes on the network once every minute
-		if time.Since(lastPing).Seconds() >= 10 {
+		if time.Since(lastPing).Minutes() >= 1 {
 			err := m.communicationComponent.PingNetwork()
 			if err != nil {
 				log.Printf("Error pinging network: %+v\n", err)
