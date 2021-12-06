@@ -1,4 +1,4 @@
-# Blockchain Honours Project
+# Blockchain For Education
 
 This repository contains the project documents and code for my Blockchain Honours Project with the Univesity of Manitoba. The project proposal can be found [here](Proposal.pdf). A Blockchain paper that I wrote can be found [here](TermPaper.pdf). Project requirements can be found [here](Requirements.md). Bi-weekly project updates can be found [here](Updates.md).
 
@@ -12,3 +12,7 @@ Contact information is as follows:
 
 Name: Zack Holmberg  
 Email: holmbezt@myumanitoba.ca
+
+TODO: Update README
+
+Running instructions:
