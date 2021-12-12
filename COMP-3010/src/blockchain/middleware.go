@@ -4,12 +4,15 @@ import (
 	"container/list"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/mroth/weightedrand"
 )
 
 // Middleware is the Middleware object
@@ -17,6 +20,7 @@ type Middleware struct {
 	communicationComponent CommunicationComponent
 	transactionQueue       *list.List
 	newTransaction         chan Transaction
+	lotteryPool            []LotteryEntry
 }
 
 // example request: curl -X POST -d 'from=jerry&to=bob&amount=10' localhost:8090/newTransaction
@@ -142,13 +146,18 @@ func (m *Middleware) Run() {
 			switch peerMsg.Command {
 			case "PING":
 				log.Printf("Recieved a ping from %s:%d\n", peerMsg.From.Address.IP.String(), peerMsg.From.Address.Port)
-
+			case "GET_CHAIN", "PEER_CHAIN":
+				// Ignore, this is only a peer-relevant command but since Middleware is a part of the network it will get the messages
 			case "PROOF":
-
-				//Dont run this in a goroutine as not to cause possible concurrency issues
-
 				// A blockchain peer is returning a proof for the current mining session, thus set proofFound to true
 				// so that the mining session is concluded
+
+				// TODO: Should probably get network to validate this proof before ending the mining session and whatnot
+				// will require the peer to send the candidate block/hash
+
+				// If the validation is unsucessful and we're doing PoS (lotteryPool len > 0), then delete the winner's
+				// stake as they lose it for malicious behaviour
+
 				if !proofFound {
 					proofFound = true
 					log.Println("Peer found proof. Ending current mining session...")
@@ -172,6 +181,37 @@ func (m *Middleware) Run() {
 					}
 
 				}
+
+			case "STAKE":
+				newLotteryEntry := peerMsg.Data.(LotteryEntry)
+
+				if len(m.lotteryPool) == 0 {
+					log.Println("Running lottery in 10 seconds...")
+					time.AfterFunc(10*time.Second, func() {
+						lotteryWinner, err := m.runLottery()
+						if err != nil {
+							log.Printf("Fatal error running lottery: %v\n", err)
+							done = true
+						}
+
+						toSend, err := m.communicationComponent.GenerateMessage("WINNER", nil)
+						if err != nil {
+							log.Printf("Fatal error generating message: %v\n", err)
+							done = true
+						}
+
+						err = m.communicationComponent.SendMsgToPeer(toSend, lotteryWinner)
+						if err != nil {
+							// This would be a fatal error because if a peer doesn't recieve the reward,
+							// it wont add the new block to its chain, and the block will get lost if the next session begins
+							log.Printf("Fatal error sending message to peer: %v", err)
+							done = true
+						}
+					})
+				}
+				log.Printf("Received lottery entry: %+v\n", newLotteryEntry)
+
+				m.lotteryPool = append(m.lotteryPool, newLotteryEntry)
 
 			default:
 				log.Println("Warning: Command \"" + peerMsg.Command + "\" not supported")
@@ -214,19 +254,43 @@ func (m *Middleware) Run() {
 
 			go func() {
 
-				// Else if proofFound, conclude the current mining session by broadcasting a halt message to the peers
-				// to halt mining and cause consensus to be run so every peer gets a copy of the new longest chain
-				log.Println("Broadcasting halt message to peers...")
+				// If the lottery pool isn't empty, that means the network is using Proof of Stake,
+				// so return the peers' stakes that they sent for the lottery
+				if len(m.lotteryPool) > 0 {
+					for _, entry := range m.lotteryPool {
 
-				toSend, err := m.communicationComponent.GenerateMessage("HALT", nil)
+						toSend, err := m.communicationComponent.GenerateMessage("STAKE", entry)
+						if err != nil {
+							// This would be a fatal error
+							log.Printf("Fatal error generating message: %v\n", err)
+							done = true
+						}
+
+						err = m.communicationComponent.SendMsgToPeer(toSend, entry.Peer)
+						if err != nil {
+							// This would be a fatal error
+							log.Printf("Error sending message to peer: %v", err)
+							done = true
+						}
+
+					}
+					// Reset the state
+					m.lotteryPool = nil
+				}
+
+				// Else if proofFound, conclude the current mining session by broadcasting a CONSENSUS message to the peers
+				// to halt mining and cause consensus to be run so every peer gets a copy of the new longest chain
+				log.Println("Broadcasting CONSENSUS message to peers...")
+
+				toSend, err := m.communicationComponent.GenerateMessage("CONSENSUS", nil)
 				if err != nil {
 					// This would be a fatal error
 					log.Printf("Fatal error generating message: %v\n", err)
 					done = true
 				}
 
-				// Broadcast the halt message to the peers on the network. All peers will send their chain copies when they
-				// recieve a halt
+				// Broadcast the CONSENSUS message to the peers on the network. All peers will send their chain copies when they
+				// recieve a CONSENSUS
 				err = m.communicationComponent.BroadcastMsgToNetwork(toSend)
 				if err != nil {
 					// This would be a fatal error
@@ -291,4 +355,31 @@ func (m *Middleware) pop() Transaction {
 	toMine := poppedElement.Value.(Transaction)
 
 	return toMine
+}
+
+// Picks the winner of the proof of stake lottery and sends them the transaction data to mine
+func (m *Middleware) runLottery() (PeerAddress, error) {
+
+	log.Println("Running lottery...")
+
+	entries := []weightedrand.Choice{}
+
+	for _, entry := range m.lotteryPool {
+		newChoice := weightedrand.NewChoice(entry.Peer, uint(entry.Stake))
+		entries = append(entries, newChoice)
+	}
+
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	c, err := weightedrand.NewChooser(entries...)
+	if err != nil {
+		log.Printf("Error choosing lottery winner: %+v\n", err)
+		return PeerAddress{}, err
+	}
+
+	lotteryWinner := c.Pick().(PeerAddress)
+	log.Printf("Lottery winner: %+v\n", lotteryWinner)
+
+	return lotteryWinner, nil
+
 }

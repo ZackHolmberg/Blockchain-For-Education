@@ -81,7 +81,8 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 				timestamp := blockMap["Timestamp"].(string)
 				prevHash := blockMap["PrevHash"].(string)
 				hash := blockMap["Hash"].(string)
-				newBlock := Block{Data: newTransaction, Index: index, Timestamp: timestamp, PrevHash: prevHash, Hash: hash}
+				nonce := int(blockMap["Nonce"].(float64))
+				newBlock := Block{Data: newTransaction, Index: index, Timestamp: timestamp, PrevHash: prevHash, Hash: hash, Nonce: nonce}
 				newChain.ChainCopy = append(newChain.ChainCopy, newBlock)
 			}
 
@@ -114,7 +115,8 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 						timestamp := blockMap["Timestamp"].(string)
 						prevHash := blockMap["PrevHash"].(string)
 						hash := blockMap["Hash"].(string)
-						newBlock := Block{Data: newTransaction, Index: index, Timestamp: timestamp, PrevHash: prevHash, Hash: hash}
+						nonce := int(blockMap["Nonce"].(float64))
+						newBlock := Block{Data: newTransaction, Index: index, Timestamp: timestamp, PrevHash: prevHash, Hash: hash, Nonce: nonce}
 						tempList = append(tempList, newBlock)
 					}
 
@@ -130,6 +132,12 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 				fmt.Println("No existing peer chains.")
 				dataStruct = PeerChains{}
 			}
+		} else if val, ok := dataObject["stake"]; ok {
+
+			// Then the data is a lottery entry, so unmarshal into a LotteryEntry struct
+			stake := int(val.(float64))
+			dataStruct = LotteryEntry{Stake: stake, Peer: newPeer}
+
 		} else {
 			// Else the data is of an unsupported type
 			err := errors.New("error unmarshalling Data object: unsupported type")

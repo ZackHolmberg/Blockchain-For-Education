@@ -28,15 +28,14 @@ type Peer struct {
 	communicationComponent CommunicationComponent
 	consensusComponent     ConsensusComponent
 	chain                  []Block
-	mining                 bool
 	wallet                 int
 }
 
 //ConsensusComponent standardizes methods for any Peer consensus component
 type ConsensusComponent interface {
-	CalculateHash(nonce int, block Block) string
-	ProofMethod(b Block, m bool) string
-	ValidateProof(s string) bool
+	ValidateBlock(b Block) bool
+	HandleCommand(msg Message, p *Peer) error
+	GetCandidateBlock() Block
 	Initialize() error
 	Terminate()
 }
@@ -77,10 +76,10 @@ func NewPeer(com CommunicationComponent, p ConsensusComponent) (Peer, error) {
 }
 
 // Initialize initializes the Peer by initializing its components and serving itself on the network
-func (b *Peer) initialize() error {
+func (p *Peer) initialize() error {
 
 	// Initialize Peer peer components
-	err := b.initializeComponents()
+	err := p.initializeComponents()
 
 	// If there was an error initializing one of the components
 	if err != nil {
@@ -89,7 +88,7 @@ func (b *Peer) initialize() error {
 	}
 
 	// Initialize the chain
-	err = b.initializeChain()
+	err = p.initializeChain()
 
 	// If there was an error initializing the chain
 	if err != nil {
@@ -97,45 +96,31 @@ func (b *Peer) initialize() error {
 		return err
 	}
 
+	p.wallet = 10
+
 	return nil
 }
 
 // createGenesisBlock initializes and adds a genesis block to the Peer
-func (b *Peer) createGenesisBlock() {
+func (p *Peer) createGenesisBlock() {
 
 	genesisBlock := Block{}
 	genesisBlock.Index = 0
 	genesisBlock.Timestamp = time.Now().String()
 	genesisBlock.Data = Transaction{}
 	genesisBlock.PrevHash = ""
-	genesisBlock.Hash = b.consensusComponent.ProofMethod(genesisBlock, true)
+	genesisBlock.Nonce = 0
+	genesisBlock.Hash = "0"
 
-	b.chain = append(b.chain, genesisBlock)
-}
-
-// mine implements functionality to mine a new block to the chain
-func (b *Peer) mine(data Data) Block {
-
-	//Create a new block
-	newBlock := Block{
-		Index:     len(b.chain),
-		Timestamp: time.Now().String(),
-		Data:      data,
-		PrevHash:  b.chain[len(b.chain)-1].Hash,
-		Hash:      ""}
-
-	//Calculate this block's proof
-	newBlock.Hash = b.consensusComponent.ProofMethod(newBlock, b.mining)
-
-	return newBlock
+	p.chain = append(p.chain, genesisBlock)
 }
 
 // Run utilizes the Peer components to run this Peer peer by sending/recieving
 // requests and messages on the p2p network
-func (b *Peer) Run() {
+func (p *Peer) Run() {
 
 	//When Run() concludes, terminate() will be called to clean up the different Peer components
-	defer b.terminate()
+	defer p.terminate()
 
 	// Sets done equal to true if the user exits the program with ctrl+c, which will case the loop to finish and Run() to exit,
 	// which will cause terminate() to run
@@ -153,23 +138,18 @@ func (b *Peer) Run() {
 
 	var lastPing = time.Now()
 	go func() {
-		err := b.communicationComponent.PingNetwork()
+		err := p.communicationComponent.PingNetwork()
 		if err != nil {
 			log.Printf("Error pinging network: %+v\n", err)
 		}
 	}()
 	fmt.Println()
 
-	// Session variables
-	var candidateBlock Block
-	var newBlock Block
-	b.mining = false
-
 	for !done {
 
 		// Get message from peers
 		go func() {
-			err := b.communicationComponent.RecieveFromNetwork(true)
+			err := p.communicationComponent.RecieveFromNetwork(true)
 			if err != nil {
 				log.Printf("Fatal Error recieving from network: %+v\n", err)
 				done = true
@@ -177,99 +157,49 @@ func (b *Peer) Run() {
 		}()
 
 		select {
-		case peerMsg := <-b.communicationComponent.GetMessageChannel():
+		case peerMsg := <-p.communicationComponent.GetMessageChannel():
 			switch peerMsg.Command {
 			case "PING":
 				log.Printf("Recieved a ping from %s:%d\n", peerMsg.From.Address.IP.String(), peerMsg.From.Address.Port)
 
-			case "MINE":
+			case "PEER_CHAIN":
 				go func() {
-					// Start a new mining session
-					newTransaction := peerMsg.Data.(Transaction)
-					b.mining = true
-					candidateBlock = Block{}
-					log.Println("Recieved a new transaction, beginning new mining session...")
+					peerChain := peerMsg.Data.(Chain).ChainCopy
+					// fmt.Printf("\n\nDEBUG - Chain before consensus: %+v\n\n\n", p.chain)
+					// If the received chain is longer than the current chain, use the received chain as this peer's new chain copy, and broadcast our copy again
+					if len(peerChain) > len(p.chain) {
+						p.chain = peerChain
+						log.Println("Recieved a longer copy of the chain, setting it as new local copy")
 
-					// Mine the new block
-					newBlock = b.mine(newTransaction)
-					b.mining = false
-
-					// If the new block's hash isnt empty, then this peer succesffuly mined the block
-					if newBlock.Hash != "" {
-						log.Println("Block mined successfully")
-						candidateBlock = newBlock
-						log.Println("Sending proof to Middleware...")
-
-						toSend, err := b.communicationComponent.GenerateMessage("PROOF", nil)
-						if err != nil {
-							log.Printf("Fatal error generating message: %v\n", err)
-							done = true
-						}
-
-						err = b.communicationComponent.SendMsgToPeer(toSend, b.communicationComponent.GetMiddlewarePeer())
-						if err != nil {
-							log.Printf("Error sending message to Middleware: %v\n", err)
-							return
-						}
+						p.broadcastChainCopy()
 					}
+					// fmt.Printf("\n\nDEBUG - Chain after consensus: %+v\n\n\n", p.chain)
 				}()
-
-			case "HALT":
-				go func() {
-					if b.mining {
-						// Set mining to false which will end the mining session
-						// as another peer has already successfully mined the block
-						b.mining = false
-					}
-
-					// Broadcast this peer's copy of the chain so that the new chain can be distributed
-					data := Chain{ChainCopy: b.chain}
-
-					toSend, err := b.communicationComponent.GenerateMessage("PEER_CHAIN", data)
-					if err != nil {
-						log.Printf("Error generating message: %v\n", err)
-					}
-
-					err = b.communicationComponent.BroadcastMsgToNetwork(toSend)
-					if err != nil {
-						log.Printf("Error broadcasting message: %v\n", err)
-					}
-
-				}()
+			case "GET_CHAIN":
+				go p.broadcastChainCopy()
 
 			case "REWARD":
 				go func() {
 					// If this peer was the first peer to successfully mine the block, append the candidate block to this peer's Peer
 					// so that other nodes will get the block when consensus occurs
 					log.Println("Appending new mined block to local chain")
-					b.chain = append(b.chain, candidateBlock)
+					p.chain = append(p.chain, p.consensusComponent.GetCandidateBlock())
 
 					// Add the reward that was sent to this peer for succesfully
 					// mining the new block to this peer's wallet
 					log.Println("Recieved a reward, adding amount to wallet... ")
-					b.wallet += peerMsg.Data.(Transaction).Amount
-					log.Printf("Updated balance: %d\n", b.wallet)
+					p.wallet += peerMsg.Data.(Transaction).Amount
+					log.Printf("Updated balance: %d\n", p.wallet)
 				}()
 
-			case "PEER_CHAIN":
-				go func() {
-					peerChain := peerMsg.Data.(Chain).ChainCopy
-					// fmt.Printf("\n\nDEBUG - Chain before consensus: %+v\n\n\n", b.chain)
-
-					// If the received chain is longer than the current chain, use the received chain as this peer's new chain copy, and broadcast our copy again
-					if len(peerChain) > len(b.chain) {
-						b.chain = peerChain
-						log.Println("Recieved a longer copy of the chain, setting it as new local copy")
-
-						b.broadcastChainCopy()
-					}
-					// fmt.Printf("\n\nDEBUG - Chain after consensus: %+v\n\n\n", b.chain)
-				}()
-			case "GET_CHAIN":
-				go b.broadcastChainCopy()
-
+			// If the the received command isn't supported by the peer, then it must be a component-specific
+			// command, and thus we hand it off for the component to handle. Currently, only the consensus component
+			// so we can assume the command is meant for it and hand it off
 			default:
-				log.Println("Warning: Command \"" + peerMsg.Command + "\" not supported")
+				err := p.consensusComponent.HandleCommand(peerMsg, p)
+				if err != nil {
+					log.Printf("Consensus component had error when handling message: %+v\n", err)
+				}
 			}
 		default:
 			//There was no message to read, thus do nothing
@@ -277,7 +207,7 @@ func (b *Peer) Run() {
 
 		// Ping all peer nodes on the network once every minute
 		if time.Since(lastPing).Minutes() >= 1 {
-			err := b.communicationComponent.PingNetwork()
+			err := p.communicationComponent.PingNetwork()
 			if err != nil {
 				log.Printf("Error pinging network: %+v\n", err)
 			} else {
@@ -287,7 +217,7 @@ func (b *Peer) Run() {
 
 		// If this peer hasn't received a message from another peer for 75 seconds,
 		// then remove that peer from the list of known nodes
-		b.communicationComponent.PrunePeerNodes()
+		p.communicationComponent.PrunePeerNodes()
 
 		// Timeout for 5 milliseconds to limit the number of iterations of the loop to 20 per s
 		time.Sleep(5 * time.Millisecond)
@@ -296,18 +226,18 @@ func (b *Peer) Run() {
 }
 
 // terminate calls all of the interface-defined component clean-up methods
-func (b *Peer) terminate() {
+func (p *Peer) terminate() {
 	fmt.Println("\nTerminating Peer components...")
 
-	b.communicationComponent.Terminate()
-	b.consensusComponent.Terminate()
+	p.communicationComponent.Terminate()
+	p.consensusComponent.Terminate()
 
 	fmt.Println("Exiting Blockchain Peer...")
 }
 
-func (b *Peer) initializeComponents() error {
+func (p *Peer) initializeComponents() error {
 	// Initialize the communication component
-	err := b.communicationComponent.Initialize()
+	err := p.communicationComponent.Initialize()
 
 	if err != nil {
 		fmt.Printf("Error initializing Peer communication component: %+v", err)
@@ -315,7 +245,7 @@ func (b *Peer) initializeComponents() error {
 	}
 
 	// Initialize the proof component
-	err = b.consensusComponent.Initialize()
+	err = p.consensusComponent.Initialize()
 
 	// If there was an error initializing one of the components
 	if err != nil {
@@ -326,18 +256,18 @@ func (b *Peer) initializeComponents() error {
 	return nil
 }
 
-func (b *Peer) initializeChain() error {
+func (p *Peer) initializeChain() error {
 
 	// Create the genesis block in case we are the first peer on the network
-	b.createGenesisBlock()
+	p.createGenesisBlock()
 
 	// Get peer chains in case we are not the first peer on the network
-	toSend, err := b.communicationComponent.GenerateMessage("GET_CHAIN", nil)
+	toSend, err := p.communicationComponent.GenerateMessage("GET_CHAIN", nil)
 	if err != nil {
 		log.Printf("Error generating message: %v\n", err)
 	}
 
-	err = b.communicationComponent.BroadcastMsgToNetwork(toSend)
+	err = p.communicationComponent.BroadcastMsgToNetwork(toSend)
 	if err != nil {
 		log.Printf("Error broadcasting message: %v\n", err)
 	}
@@ -345,16 +275,16 @@ func (b *Peer) initializeChain() error {
 	return nil
 }
 
-func (b *Peer) broadcastChainCopy() {
+func (p *Peer) broadcastChainCopy() {
 	// Broadcast this peer's copy of the chain so that the new chain can be distributed
-	data := Chain{ChainCopy: b.chain}
+	data := Chain{ChainCopy: p.chain}
 
-	toSend, err := b.communicationComponent.GenerateMessage("PEER_CHAIN", data)
+	toSend, err := p.communicationComponent.GenerateMessage("PEER_CHAIN", data)
 	if err != nil {
 		log.Printf("Error generating message: %v\n", err)
 	}
 
-	err = b.communicationComponent.BroadcastMsgToNetwork(toSend)
+	err = p.communicationComponent.BroadcastMsgToNetwork(toSend)
 	if err != nil {
 		log.Printf("Error broadcasting message: %v\n", err)
 	}

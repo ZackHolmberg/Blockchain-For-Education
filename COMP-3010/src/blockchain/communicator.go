@@ -81,7 +81,7 @@ func (c *Communicator) RecieveFromNetwork(withTimeout bool) error {
 
 	// If the peer that sent the message is not a known peer, add it to the peerNodes list
 	if !knownPeer(c.peerAddresses, message.From) {
-		fmt.Printf("DEBUG - Peer is not known: %v\n", message.From)
+		// fmt.Printf("DEBUG - Peer is not known: %v\n", message.From)
 		c.peerAddresses = append(c.peerAddresses, message.From)
 	}
 	// fmt.Println("DEBUG - Checked if known peer")
@@ -386,7 +386,7 @@ func (c *Communicator) discoverPeers(addr net.UDPAddr) error {
 			}
 
 			// Append the new peer to the Communicator's list of known peer nodes
-			fmt.Printf("DEBUG - Adding new peer node: %v\n", newPeer)
+			// fmt.Printf("DEBUG - Adding new peer node: %v\n", newPeer)
 			c.peerAddresses = append(c.peerAddresses, newPeer)
 
 		}

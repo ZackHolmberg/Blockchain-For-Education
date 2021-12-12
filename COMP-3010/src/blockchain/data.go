@@ -78,3 +78,26 @@ func (p PeerChains) ToString() string {
 	}
 	return string(b)
 }
+
+// =========== LotteryEntry ===========
+
+// LotteryEntry represents one entry in the proof of stake lottery
+type LotteryEntry struct {
+	Stake int         `json:"stake"`
+	Peer  PeerAddress `json:"peer"`
+}
+
+// GetData is the interface method that is required to retrieve Data object
+func (l LotteryEntry) GetData() Data {
+	return l
+}
+
+// ToString is the interface method that is required to transform the Data object into a string for communication
+func (p LotteryEntry) ToString() string {
+	b, err := json.Marshal(p)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return string(b)
+}

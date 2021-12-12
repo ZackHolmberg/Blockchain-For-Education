@@ -9,4 +9,5 @@ type Block struct {
 	Data      Data
 	PrevHash  string
 	Hash      string
+	Nonce     int
 }
