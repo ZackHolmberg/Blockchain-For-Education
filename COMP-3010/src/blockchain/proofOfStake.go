@@ -80,17 +80,15 @@ func (p *ProofOfStake) HandleCommand(msg Message, peer *Peer) (err error) {
 			//Calculate this block's proof
 			newBlock.Hash = p.CalculateHash(newBlock)
 
-			// TODO: Add new block to chain and broadcast new chain to the network or send it back to the middleware?
-
 			log.Println("Block mined successfully")
-			// TODO: Should probably get network to validate this proof before ending the mining session and whatnot
-			// will require the peer to send the candidate block/hash
 
 			p.CandidateBlock = newBlock
+			data := CandidateBlock{Block: newBlock}
+
 			log.Println("Sending proof to Middleware...")
 
 			// TODO: Would need to send the proposed block here for validation to occur
-			toSend, err := peer.communicationComponent.GenerateMessage("PROOF", nil)
+			toSend, err := peer.communicationComponent.GenerateMessage("PROOF", data)
 			if err != nil {
 				log.Printf("Fatal error generating message: %v\n", err)
 				return
@@ -126,7 +124,7 @@ func (p *ProofOfStake) HandleCommand(msg Message, peer *Peer) (err error) {
 			// Accept the stake refund from the middleware, add staked amount back into wallet
 			data := msg.Data.(LotteryEntry)
 			peer.wallet += data.Stake
-			log.Println("Received stack back from Middleware, new wallet balance: ", peer.wallet)
+			log.Println("Received stake back from Middleware, new wallet balance: ", peer.wallet)
 
 		}()
 

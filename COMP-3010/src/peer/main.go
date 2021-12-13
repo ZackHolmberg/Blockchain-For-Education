@@ -12,7 +12,7 @@ var proofOfStake *blockchain.ProofOfStake
 func init() {
 
 	communicator = &blockchain.Communicator{}
-	// proofOfWork = blockchain.ProofOfWork{ProofDifficulty: 6}
+	proofOfWork = &blockchain.ProofOfWork{ProofDifficulty: 6}
 	proofOfStake = &blockchain.ProofOfStake{}
 }
 

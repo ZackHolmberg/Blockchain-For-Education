@@ -93,8 +93,31 @@ func (l LotteryEntry) GetData() Data {
 }
 
 // ToString is the interface method that is required to transform the Data object into a string for communication
-func (p LotteryEntry) ToString() string {
-	b, err := json.Marshal(p)
+func (l LotteryEntry) ToString() string {
+	b, err := json.Marshal(l)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return string(b)
+}
+
+// =========== CandidateBlock ===========
+
+// CandidateBlock represents a peer's mined block that must be validated
+type CandidateBlock struct {
+	Block Block       `json:"block"`
+	Miner PeerAddress `json:"miner"`
+}
+
+// GetData is the interface method that is required to retrieve Data object
+func (c CandidateBlock) GetData() Data {
+	return c
+}
+
+// ToString is the interface method that is required to transform the Data object into a string for communication
+func (c CandidateBlock) ToString() string {
+	b, err := json.Marshal(c)
 	if err != nil {
 		fmt.Println(err)
 		return ""

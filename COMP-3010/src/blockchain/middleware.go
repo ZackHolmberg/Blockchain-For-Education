@@ -4,10 +4,12 @@ import (
 	"container/list"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
+	"reflect"
 	"strconv"
 	"syscall"
 	"time"
@@ -21,6 +23,10 @@ type Middleware struct {
 	transactionQueue       *list.List
 	newTransaction         chan Transaction
 	lotteryPool            []LotteryEntry
+	candidateBlockQueue    *list.List
+	blockValidators        int
+	blockValid             bool
+	proofFound             bool
 }
 
 // example request: curl -X POST -d 'from=jerry&to=bob&amount=10' localhost:8090/newTransaction
@@ -89,6 +95,18 @@ func (m *Middleware) Initialize(udpPort int, serverPort int) error {
 	// Initialize Transaction channel
 	m.newTransaction = make(chan Transaction)
 
+	// Initialize Candidate Block queue
+	m.candidateBlockQueue = list.New()
+
+	// Initialize validator count to 0
+	m.blockValidators = 0
+
+	// Initialize proof found boolean to false
+	m.proofFound = false
+
+	// Initialize valid block boolean to false
+	m.blockValid = false
+
 	// Initialize newTransaction request handler
 	http.HandleFunc("/newTransaction", m.handleNewTransaction)
 
@@ -128,7 +146,7 @@ func (m *Middleware) Run() {
 	fmt.Println()
 
 	// Session variables
-	peersMining, proofFound, running := false, false, false
+	peersMining, running := false, false
 
 	for !done {
 
@@ -149,70 +167,57 @@ func (m *Middleware) Run() {
 			case "GET_CHAIN", "PEER_CHAIN":
 				// Ignore, this is only a peer-relevant command but since Middleware is a part of the network it will get the messages
 			case "PROOF":
-				// A blockchain peer is returning a proof for the current mining session, thus set proofFound to true
-				// so that the mining session is concluded
+				go func() {
+					candidateBlock := peerMsg.Data.(CandidateBlock)
+					// We push every candidate block we receive on the queue
+					// in case the initial proof fails validation
+					m.candidateBlockQueue.PushBack(candidateBlock)
+					if !m.proofFound {
+						m.proofFound = true
 
-				// TODO: Should probably get network to validate this proof before ending the mining session and whatnot
-				// will require the peer to send the candidate block/hash
+						// Once the peer receives a candidate block with a proof, run network validation to
+						// ensure the block is valid
+						log.Println("First proof received. Running validation...")
 
-				// If the validation is unsucessful and we're doing PoS (lotteryPool len > 0), then delete the winner's
-				// stake as they lose it for malicious behaviour
-
-				if !proofFound {
-					proofFound = true
-					log.Println("Peer found proof. Ending current mining session...")
-
-					// Send a reward to the successful miner, which will tell them to add the mined block to their chain,
-					// which will become the new global chain once consensus is run
-					newData := Transaction{From: "", To: "", Amount: 5}
-
-					toSend, err := m.communicationComponent.GenerateMessage("REWARD", newData)
-					if err != nil {
-						log.Printf("Fatal error generating message: %v\n", err)
-						done = true
+						err := m.runValidation()
+						if err != nil {
+							// This would be a fatal error because if the network isn't able to validate
+							// the block then malicious nodes could succeed
+							log.Printf("Fatal error validating candidate block: %v", err)
+							done = true
+						}
 					}
-
-					err = m.communicationComponent.SendMsgToPeer(toSend, peerMsg.From)
-					if err != nil {
-						// This would be a fatal error because if a peer doesn't recieve the reward,
-						// it wont add the new block to its chain, and the block will get lost if the next session begins
-						log.Printf("Fatal Error sending reward to peer: %v", err)
-						done = true
-					}
-
-				}
+				}()
 
 			case "STAKE":
-				newLotteryEntry := peerMsg.Data.(LotteryEntry)
+				go func() {
 
-				if len(m.lotteryPool) == 0 {
-					log.Println("Running lottery in 10 seconds...")
-					time.AfterFunc(10*time.Second, func() {
-						lotteryWinner, err := m.runLottery()
-						if err != nil {
-							log.Printf("Fatal error running lottery: %v\n", err)
-							done = true
-						}
+					newLotteryEntry := peerMsg.Data.(LotteryEntry)
 
-						toSend, err := m.communicationComponent.GenerateMessage("WINNER", nil)
-						if err != nil {
-							log.Printf("Fatal error generating message: %v\n", err)
-							done = true
-						}
+					if len(m.lotteryPool) == 0 {
+						log.Println("Running lottery in 10 seconds...")
+						time.AfterFunc(10*time.Second, func() {
+							err := m.runLottery()
+							if err != nil {
+								// This would be a fatal error because if we cannot run the lottery
+								// then no new transactions are going to be mined
+								log.Printf("Fatal error running lottery: %v\n", err)
+								done = true
+							}
 
-						err = m.communicationComponent.SendMsgToPeer(toSend, lotteryWinner)
-						if err != nil {
-							// This would be a fatal error because if a peer doesn't recieve the reward,
-							// it wont add the new block to its chain, and the block will get lost if the next session begins
-							log.Printf("Fatal error sending message to peer: %v", err)
-							done = true
-						}
-					})
-				}
-				log.Printf("Received lottery entry: %+v\n", newLotteryEntry)
+						})
+					}
+					log.Printf("Received lottery entry: %+v\n", newLotteryEntry)
 
-				m.lotteryPool = append(m.lotteryPool, newLotteryEntry)
+					m.lotteryPool = append(m.lotteryPool, newLotteryEntry)
+				}()
 
+			case "BLOCK_VALID":
+				go func() {
+
+					m.blockValidators++
+					log.Printf("Received block validation, support count is now: %+v\n", m.blockValidators)
+				}()
 			default:
 				log.Println("Warning: Command \"" + peerMsg.Command + "\" not supported")
 			}
@@ -227,7 +232,7 @@ func (m *Middleware) Run() {
 			log.Println("Beginning a new mining session...")
 
 			// Pop a Message from the transactionQueue
-			toMine := m.pop()
+			toMine := m.popTransaction()
 
 			toSend, err := m.communicationComponent.GenerateMessage("MINE", toMine)
 			if err != nil {
@@ -245,9 +250,9 @@ func (m *Middleware) Run() {
 			// Set peersMining to true and proofFound to false since the above function call will cause the blockchain
 			// peers to begin mining the new transaction, starting a new mining session
 			peersMining = true
-			proofFound = false
+			m.proofFound = false
 
-		} else if peersMining && proofFound && !running {
+		} else if peersMining && m.proofFound && !running && m.blockValid {
 			// End the mining session. Running to be set before the goroutine starts or else it will
 			// get called multiple times
 			running = true
@@ -306,6 +311,7 @@ func (m *Middleware) Run() {
 				// Reset state
 				running = false
 				peersMining = false
+				m.candidateBlockQueue.Init()
 
 				log.Println("Mining session concluded.")
 
@@ -343,7 +349,7 @@ func (m Middleware) terminate() {
 }
 
 // Pops a message of the Middleware's transactionQueue and returns it
-func (m *Middleware) pop() Transaction {
+func (m *Middleware) popTransaction() Transaction {
 
 	// Get element from the front of the list
 	poppedElement := m.transactionQueue.Front()
@@ -357,8 +363,23 @@ func (m *Middleware) pop() Transaction {
 	return toMine
 }
 
+// Pops a message of the Middleware's transactionQueue and returns it
+func (m *Middleware) popCandidateBlock() CandidateBlock {
+
+	// Get element from the front of the list
+	poppedElement := m.candidateBlockQueue.Front()
+
+	// Remove the element, essentially "popping" it
+	m.candidateBlockQueue.Remove(poppedElement)
+
+	//Convert the popped element, which is of type *Element, to *Message
+	toMine := poppedElement.Value.(CandidateBlock)
+
+	return toMine
+}
+
 // Picks the winner of the proof of stake lottery and sends them the transaction data to mine
-func (m *Middleware) runLottery() (PeerAddress, error) {
+func (m *Middleware) runLottery() error {
 
 	log.Println("Running lottery...")
 
@@ -374,12 +395,111 @@ func (m *Middleware) runLottery() (PeerAddress, error) {
 	c, err := weightedrand.NewChooser(entries...)
 	if err != nil {
 		log.Printf("Error choosing lottery winner: %+v\n", err)
-		return PeerAddress{}, err
+		return err
 	}
 
 	lotteryWinner := c.Pick().(PeerAddress)
 	log.Printf("Lottery winner: %+v\n", lotteryWinner)
 
-	return lotteryWinner, nil
+	toSend, err := m.communicationComponent.GenerateMessage("WINNER", nil)
+	if err != nil {
+		log.Printf("Eror generating message: %v\n", err)
+		return err
+	}
 
+	err = m.communicationComponent.SendMsgToPeer(toSend, lotteryWinner)
+	if err != nil {
+		log.Printf("Error sending message to peer: %v", err)
+		return err
+	}
+
+	return nil
+
+}
+
+// Checks if the candidate block got enough validation from the network. If not,
+// applies penalty to the malicious peer who submitted the block and restarts the
+// process with the next candidate block in the queue
+func (m *Middleware) runValidation() (err error) {
+
+	m.blockValidators = 0
+
+	candidateBlock := m.popCandidateBlock()
+
+	// Else if we're doing proof of stake, run the lottery again to choose the next winner
+
+	toSend, msg_err := m.communicationComponent.GenerateMessage("VALIDATE", candidateBlock)
+	if msg_err != nil {
+		log.Printf("Fatal error generating message: %v\n", err)
+		return msg_err
+	}
+
+	msg_err = m.communicationComponent.BroadcastMsgToNetwork(toSend)
+	if msg_err != nil {
+		// This would be a fatal error because if the network isn't able to validate
+		// the block then malicious nodes could succeed
+		log.Printf("Fatal error broadasting message to network: %v", err)
+		return msg_err
+	}
+
+	// Give some time for peers to process the candidate block and respon with their validation
+	time.AfterFunc(10*time.Second, func() {
+
+		//If the block got enough validation (At least 50% of the network)
+		if m.blockValidators >= int(math.Round(float64(len(m.communicationComponent.GetPeerNodes()))/2.0)) {
+			log.Println("Validation successful. Ending current mining session...")
+			// Send a reward to the successful miner, which will tell them to add the mined block to their chain,
+			// which will become the new global chain once consensus is run
+			newData := Transaction{From: "", To: "", Amount: 5}
+
+			toSend, msg_err := m.communicationComponent.GenerateMessage("REWARD", newData)
+			if msg_err != nil {
+				log.Printf("Fatal error generating message: %v\n", err)
+				err = msg_err
+			}
+
+			msg_err = m.communicationComponent.SendMsgToPeer(toSend, candidateBlock.Miner)
+			if msg_err != nil {
+				// This would be a fatal error because if a peer doesn't recieve the reward,
+				// it wont add the new block to its chain, and the block will get lost if the next session begins
+				log.Printf("Fatal Error sending reward to peer: %v", err)
+				err = msg_err
+			}
+
+			m.blockValid = true
+
+		} else {
+			// If the validation is unsuccessful and we're doing PoS (lotteryPool len > 0), then remove the
+			// lottery winner from the lottery pool so they don't receive  a stake refund
+			if len(m.lotteryPool) > 0 {
+				entryIndex := indexOf(candidateBlock.Miner, m.lotteryPool)
+				m.lotteryPool[entryIndex] = m.lotteryPool[len(m.lotteryPool)-1]
+				m.lotteryPool = m.lotteryPool[:len(m.lotteryPool)-1]
+			}
+
+			// We do not call this method again for proof of stake because when we run the lottery again, a new user is gonna send
+			// the proof which is gonna cause this function to be run again anyway. We dont need to re-run ourself,
+			// unlike for proof of work
+			if len(m.lotteryPool) == 0 {
+				// Reattempt validation
+				m.runValidation()
+			} else {
+				m.proofFound = false
+				m.runLottery()
+			}
+		}
+
+	})
+
+	return err
+}
+
+func indexOf(entry PeerAddress, entries []LotteryEntry) int {
+	for i, e := range entries {
+		if reflect.DeepEqual(e.Peer, entry) {
+			return i
+		}
+	}
+	// Return -1 if not find
+	return -1
 }

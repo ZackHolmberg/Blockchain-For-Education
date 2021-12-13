@@ -138,6 +138,27 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 			stake := int(val.(float64))
 			dataStruct = LotteryEntry{Stake: stake, Peer: newPeer}
 
+		} else if val, ok := dataObject["block"]; ok {
+
+			// Then the data is a candidate, so unmarshal into a CandidateBlock struct
+			blockMap := val.(map[string]interface{})
+
+			dataMap := blockMap["Data"].(map[string]interface{})
+
+			// We can assume that the Data will be of type Transaction, for now
+			from := dataMap["from"].(string)
+			to := dataMap["to"].(string)
+			amount := int(dataMap["amount"].(float64))
+			newTransaction := Transaction{From: from, To: to, Amount: amount}
+
+			index := int(blockMap["Index"].(float64))
+			timestamp := blockMap["Timestamp"].(string)
+			prevHash := blockMap["PrevHash"].(string)
+			hash := blockMap["Hash"].(string)
+			nonce := int(blockMap["Nonce"].(float64))
+			candidateBlock := Block{Data: newTransaction, Index: index, Timestamp: timestamp, PrevHash: prevHash, Hash: hash, Nonce: nonce}
+			dataStruct = CandidateBlock{Block: candidateBlock, Miner: newPeer}
+
 		} else {
 			// Else the data is of an unsupported type
 			err := errors.New("error unmarshalling Data object: unsupported type")

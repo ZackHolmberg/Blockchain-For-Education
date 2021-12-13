@@ -182,14 +182,36 @@ func (p *Peer) Run() {
 				go func() {
 					// If this peer was the first peer to successfully mine the block, append the candidate block to this peer's Peer
 					// so that other nodes will get the block when consensus occurs
-					log.Println("Appending new mined block to local chain")
 					p.chain = append(p.chain, p.consensusComponent.GetCandidateBlock())
 
 					// Add the reward that was sent to this peer for succesfully
 					// mining the new block to this peer's wallet
-					log.Println("Recieved a reward, adding amount to wallet... ")
 					p.wallet += peerMsg.Data.(Transaction).Amount
+
+					log.Println("Recieved a reward, adding amount to wallet and appending new mined block to local chain")
 					log.Printf("Updated balance: %d\n", p.wallet)
+
+				}()
+
+			case "VALIDATE":
+				go func() {
+					// Tell the middleware if the received block is valid or not
+					log.Println("Received candidate block from Middleware, validating...")
+					candidateBlock := peerMsg.Data.(CandidateBlock).Block
+					valid := p.consensusComponent.ValidateBlock(candidateBlock)
+					if valid {
+						log.Println("Verified received candidate block is valid")
+						toSend, err := p.communicationComponent.GenerateMessage("BLOCK_VALID", nil)
+						if err != nil {
+							log.Printf("Error generating message: %v\n", err)
+						}
+
+						err = p.communicationComponent.SendMsgToPeer(toSend, p.communicationComponent.GetMiddlewarePeer())
+						if err != nil {
+							log.Printf("Error sending message to Middleware: %v\n", err)
+						}
+					}
+
 				}()
 
 			// If the the received command isn't supported by the peer, then it must be a component-specific
