@@ -70,7 +70,7 @@ func (c Client) sendTransaction() {
 		case "peers":
 			c.listPeers()
 		case "transaction":
-			// There must be at least one other node on the network to send currency to
+			// There must be at least one other node on the network (other than the Middleware) to send currency to
 			if len(c.communicator.GetPeerNodes()) > 1 {
 				fmt.Println("Enter transaction data or 'cancel' to cancel.")
 				//Get transaction input
@@ -125,7 +125,6 @@ func (c Client) listPeers() {
 	if len(peersList) > 1 {
 		fmt.Println("===== Known Peers =====")
 		for i, peer := range peersList {
-			// Exclude the middleware from the list of peers to send currency to
 			if peer.Address.Port != 8080 {
 				fmt.Printf("index=%d, ip=%v, port=%v\n", i, peer.Address.IP, peer.Address.Port)
 			} else {

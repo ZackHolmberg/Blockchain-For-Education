@@ -58,17 +58,17 @@ type CommunicationComponent interface {
 	PrunePeerNodes()
 }
 
-// ClientComponent standardizes methods for any Peer transaction component
+// ClientComponent standardizes methods for any Peer client component
 type ClientComponent interface {
 	Initialize(com CommunicationComponent, wallet *int) error
 	Terminate()
 }
 
 // NewPeer creates and returns a new Peer, with the Genesis Block and Components initialized
-func NewPeer(c CommunicationComponent, p ConsensusComponent, t ClientComponent) (Peer, error) {
+func NewPeer(c CommunicationComponent, p ConsensusComponent, cl ClientComponent) (Peer, error) {
 
 	// Define a new Peer with the passed componenet values
-	newPeer := Peer{communicationComponent: c, consensusComponent: p, clientComponent: t}
+	newPeer := Peer{communicationComponent: c, consensusComponent: p, clientComponent: cl}
 
 	// Initialize the Peer
 	err := newPeer.initialize()
