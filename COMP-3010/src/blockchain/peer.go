@@ -27,6 +27,7 @@ type Node interface {
 type Peer struct {
 	communicationComponent CommunicationComponent
 	consensusComponent     ConsensusComponent
+	clientComponent        ClientComponent
 	chain                  []Block
 	wallet                 int
 }
@@ -46,6 +47,7 @@ type CommunicationComponent interface {
 	InitializeWithPort(port int) error
 	GetPeerNodes() []PeerAddress
 	GetMiddlewarePeer() PeerAddress
+	GetSelfAddress() PeerAddress
 	GetMessageChannel() chan Message
 	RecieveFromNetwork(withTimeout bool) error
 	GenerateMessage(cmd string, data Data) (Message, error)
@@ -56,11 +58,17 @@ type CommunicationComponent interface {
 	PrunePeerNodes()
 }
 
+// ClientComponent standardizes methods for any Peer transaction component
+type ClientComponent interface {
+	Initialize(com CommunicationComponent, wallet *int) error
+	Terminate()
+}
+
 // NewPeer creates and returns a new Peer, with the Genesis Block and Components initialized
-func NewPeer(com CommunicationComponent, p ConsensusComponent) (Peer, error) {
+func NewPeer(c CommunicationComponent, p ConsensusComponent, t ClientComponent) (Peer, error) {
 
 	// Define a new Peer with the passed componenet values
-	newPeer := Peer{communicationComponent: com, consensusComponent: p}
+	newPeer := Peer{communicationComponent: c, consensusComponent: p, clientComponent: t}
 
 	// Initialize the Peer
 	err := newPeer.initialize()
@@ -160,7 +168,7 @@ func (p *Peer) Run() {
 		case peerMsg := <-p.communicationComponent.GetMessageChannel():
 			switch peerMsg.Command {
 			case "PING":
-				log.Printf("Recieved a ping from %s:%d\n", peerMsg.From.Address.IP.String(), peerMsg.From.Address.Port)
+				log.Printf("Recieved a ping from %s\n", peerMsg.From.String())
 
 			case "PEER_CHAIN":
 				go func() {
@@ -178,17 +186,27 @@ func (p *Peer) Run() {
 			case "GET_CHAIN":
 				go p.broadcastChainCopy()
 
-			case "REWARD":
+			case "TRANSACTION":
 				go func() {
-					// If this peer was the first peer to successfully mine the block, append the candidate block to this peer's Peer
-					// so that other nodes will get the block when consensus occurs
-					p.chain = append(p.chain, p.consensusComponent.GetCandidateBlock())
 
-					// Add the reward that was sent to this peer for succesfully
-					// mining the new block to this peer's wallet
-					p.wallet += peerMsg.Data.(Transaction).Amount
+					amount := peerMsg.Data.(Transaction).Amount
 
-					log.Println("Recieved a reward, adding amount to wallet and appending new mined block to local chain")
+					// Determine whether this is a transaction from a fellow Peer or a reward from the Middleware
+					if peerMsg.From.String() == p.communicationComponent.GetMiddlewarePeer().String() {
+						// If this peer was the first peer to successfully mine the block, append the candidate block to this peer's Peer
+						// so that other nodes will get the block when consensus occurs
+						p.chain = append(p.chain, p.consensusComponent.GetCandidateBlock())
+
+						log.Println("Recieved a reward, adding amount to wallet and appending new mined block to local chain")
+					} else {
+						sender := peerMsg.Data.(Transaction).From
+						log.Printf("Recieved a transaction from: %v with amount: %d\n", sender, amount)
+
+					}
+
+					// Whether it's a reward or not, add the amount to this Peer's wallet
+					p.wallet += amount
+
 					log.Printf("Updated balance: %d\n", p.wallet)
 
 				}()
@@ -253,11 +271,12 @@ func (p *Peer) terminate() {
 
 	p.communicationComponent.Terminate()
 	p.consensusComponent.Terminate()
-
+	p.clientComponent.Terminate()
 	fmt.Println("Exiting Blockchain Peer...")
 }
 
 func (p *Peer) initializeComponents() error {
+
 	// Initialize the communication component
 	err := p.communicationComponent.Initialize()
 
@@ -266,12 +285,21 @@ func (p *Peer) initializeComponents() error {
 		return err
 	}
 
-	// Initialize the proof component
+	// Initialize the consensus component
 	err = p.consensusComponent.Initialize()
 
-	// If there was an error initializing one of the components
+	// If there was an error initializing the consensus component
 	if err != nil {
-		fmt.Printf("Error initializing Peer proof component: %+v", err)
+		fmt.Printf("Error initializing Peer consensus component: %+v", err)
+		return err
+	}
+
+	// Initialize the transactions component
+	err = p.clientComponent.Initialize(p.communicationComponent, &p.wallet)
+
+	// If there was an error initializing the transactions component
+	if err != nil {
+		fmt.Printf("Error initializing Peer transactions component: %+v", err)
 		return err
 	}
 

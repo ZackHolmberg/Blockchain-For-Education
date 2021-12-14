@@ -18,17 +18,22 @@ import (
 
 // Communicator implements CommunicationsComponent and facilities Blockchain communication
 type Communicator struct {
-	self          *zeroconf.Server
+	service       *zeroconf.Server
 	socket        *net.UDPConn
 	peerAddresses []PeerAddress
 	peerMessage   chan Message
 	middleware    PeerAddress
+	self          PeerAddress
 }
 
 // PeerAddress represents a peer on the network and contains metadata about that peer
 type PeerAddress struct {
 	Address         net.UDPAddr `json:"address"`
 	LastMessageTime time.Time   `json:"lastMessageTime"`
+}
+
+func (p PeerAddress) String() string {
+	return fmt.Sprintf("%v:%v", p.Address.IP, p.Address.Port)
 }
 
 // GetMessageChannel is the interface retriever method that returns the channel that a message from a peer is put into upon read
@@ -41,9 +46,14 @@ func (c Communicator) GetPeerNodes() []PeerAddress {
 	return c.peerAddresses
 }
 
-// GetMiddlewarePeer is the interface retriever method that returns a pointer to the Middlware peer
+// GetMiddlewarePeer is the interface retriever method that returns the Middleware Peer's address
 func (c Communicator) GetMiddlewarePeer() PeerAddress {
 	return c.middleware
+}
+
+// GetSelfAddress is the interface retriever method that returns this Peer's adress
+func (c Communicator) GetSelfAddress() PeerAddress {
+	return c.self
 }
 
 // RecieveFromNetwork is the interface method that
@@ -137,11 +147,18 @@ func (c *Communicator) Initialize() error {
 		return err
 	}
 
+	// Remember this peer's address
+	c.self = PeerAddress{Address: addr}
+
 	// Initialize the service that this peer will join the p2p network through
-	c.self = initializeService(addr.Port)
+	c.service = initializeService(addr.Port)
 
 	// Discover peers on the p2p network
-	c.discoverPeers(addr)
+	err = c.discoverPeers(addr)
+	if err != nil {
+		log.Printf("Error discovering peers: %+v\n", err)
+		return err
+	}
 
 	// Initialize peer Message channel. Need to have a 1 message buffer for peer startup.
 	c.peerMessage = make(chan Message, 1)
@@ -164,8 +181,11 @@ func (c *Communicator) InitializeWithPort(port int) error {
 		return err
 	}
 
+	// Remember this peer's address
+	c.self = PeerAddress{Address: addr}
+
 	// Initialize the service that this peer will join the p2p network through
-	c.self = initializeService(port)
+	c.service = initializeService(port)
 
 	// Discover peers on the p2p network
 	err = c.discoverPeers(addr)
@@ -258,7 +278,7 @@ func (c Communicator) terminateCommunicator() {
 	log.Println("Terminating communicator...")
 
 	//Shutdown self service instance
-	c.self.Shutdown()
+	c.service.Shutdown()
 
 	//Close the socket
 	err := c.socket.Close()
@@ -303,7 +323,10 @@ func initializeSocketWithPort(port int) *net.UDPConn {
 
 // Errors that occur within this function and similar ones do not need to be passed up to the caller
 // because the program just exits if an error occurs
+
 func initializeService(port int) *zeroconf.Server {
+	// TODO: Consider whether the Middleware should be the only peer initializing the service,
+	// and the rest of the Peers simpy join its service
 
 	//Get name of host to use in the peerName
 	se, err := os.Hostname()
