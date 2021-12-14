@@ -29,6 +29,8 @@ type Middleware struct {
 	proofFound             bool
 }
 
+const REWARD_AMOUNT = 5
+
 // example request: curl -X POST -d 'from=jerry&to=bob&amount=10' localhost:8090/newTransaction
 
 func (m *Middleware) handleNewTransaction(w http.ResponseWriter, r *http.Request) {
@@ -40,9 +42,6 @@ func (m *Middleware) handleNewTransaction(w http.ResponseWriter, r *http.Request
 	}
 	from := r.FormValue("from")
 	to := r.FormValue("to")
-
-	fmt.Fprintf(w, "%+v\n", r.Form)
-	fmt.Fprintf(w, "from: %s, to: %s\n", from, to)
 
 	amount, err := strconv.Atoi(r.FormValue("amount"))
 	if err != nil {
@@ -163,7 +162,7 @@ func (m *Middleware) Run() {
 		case peerMsg := <-m.communicationComponent.GetMessageChannel():
 			switch peerMsg.Command {
 			case "PING":
-				log.Printf("Recieved a ping from %s:%d\n", peerMsg.From.Address.IP.String(), peerMsg.From.Address.Port)
+				log.Printf("Recieved a ping from %s\n", peerMsg.From.String())
 			case "GET_CHAIN", "PEER_CHAIN":
 				// Ignore, this is only a peer-relevant command but since Middleware is a part of the network it will get the messages
 			case "PROOF":
@@ -311,6 +310,7 @@ func (m *Middleware) Run() {
 				// Reset state
 				running = false
 				peersMining = false
+				m.blockValid = false
 				m.candidateBlockQueue.Init()
 
 				log.Println("Mining session concluded.")
@@ -442,17 +442,19 @@ func (m *Middleware) runValidation() (err error) {
 		return msg_err
 	}
 
-	// Give some time for peers to process the candidate block and respon with their validation
-	time.AfterFunc(10*time.Second, func() {
+	// Give some time for peers to process the candidate block and respond with their validation
+	time.AfterFunc(5*time.Second, func() {
 
 		//If the block got enough validation (At least 50% of the network)
 		if m.blockValidators >= int(math.Round(float64(len(m.communicationComponent.GetPeerNodes()))/2.0)) {
 			log.Println("Validation successful. Ending current mining session...")
 			// Send a reward to the successful miner, which will tell them to add the mined block to their chain,
 			// which will become the new global chain once consensus is run
-			newData := Transaction{From: "", To: "", Amount: 5}
+			fmt.Printf("DEBUG - from: '%+v', to: '%+v'\n", m.communicationComponent.GetSelfAddress().String(), candidateBlock.Miner.String())
 
-			toSend, msg_err := m.communicationComponent.GenerateMessage("REWARD", newData)
+			newData := Transaction{From: m.communicationComponent.GetSelfAddress().String(), To: candidateBlock.Miner.String(), Amount: REWARD_AMOUNT}
+
+			toSend, msg_err := m.communicationComponent.GenerateMessage("TRANSACTION", newData)
 			if msg_err != nil {
 				log.Printf("Fatal error generating message: %v\n", err)
 				err = msg_err
