@@ -1,0 +1,227 @@
+<mxfile host="65bd71144e">
+    <diagram name="Page-1" id="6133507b-19e7-1e82-6fc7-422aa6c4b21f">
+        <mxGraphModel dx="1723" dy="3197" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1100" pageHeight="850" background="none" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="CqK5GXQSp2iezG7qc9yQ-13" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="b94bc138ca980ef-1" target="CqK5GXQSp2iezG7qc9yQ-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="b94bc138ca980ef-1" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ClientComponent&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Initialize() error&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Terminate()&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Verify(Transaction): bool&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Sign(Transaction): (Transaction, error)&lt;br&gt;+ HandleCommand(Message, com &lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;CommunicationComponent): error&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" parent="1" vertex="1">
+                    <mxGeometry x="-70" y="365" width="300" height="155" as="geometry"/>
+                </mxCell>
+                <mxCell id="CqK5GXQSp2iezG7qc9yQ-2" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Peer&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ comComponent: CommunicationComponent&lt;br&gt;+ conComponent: ConsensusComponent&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ clientComponent: ClientComponent&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ chain: []Block&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ wallet: int&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ NewPeer(components):(Peer, error)&lt;br&gt;+ Run()&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ initialize(): error&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ mine()&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ createGenesisBlock()&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ terminate()&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ initializeComponents(): error&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ initializeChain(): error&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ broadcastChainCopy(): error&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="490" y="-20" width="282" height="300" as="geometry"/>
+                </mxCell>
+                <mxCell id="CqK5GXQSp2iezG7qc9yQ-8" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" parent="1" source="CqK5GXQSp2iezG7qc9yQ-5" target="CqK5GXQSp2iezG7qc9yQ-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="CqK5GXQSp2iezG7qc9yQ-5" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ConsensusComponent&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ ValidateBlock(Block) bool&lt;br&gt;+ HandleCommand(Message, *Peer) error&lt;br&gt;+ GetCandidateBlock() Block&lt;br&gt;+ Initialize() error&lt;br&gt;+ Terminate()&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" parent="1" vertex="1">
+                    <mxGeometry x="290" y="350" width="270" height="125" as="geometry"/>
+                </mxCell>
+                <mxCell id="CqK5GXQSp2iezG7qc9yQ-14" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="CqK5GXQSp2iezG7qc9yQ-7" target="CqK5GXQSp2iezG7qc9yQ-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="CqK5GXQSp2iezG7qc9yQ-7" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Block&lt;/b&gt;&lt;br&gt;Class&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Index: int&lt;br&gt;+ Timestamp: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Data: Data&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ PrevHash: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Hash: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Nonce: int&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="940" y="365" width="200" height="155" as="geometry"/>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-4" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontStyle=1" parent="1" source="CqK5GXQSp2iezG7qc9yQ-15" target="CqK5GXQSp2iezG7qc9yQ-7" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1030" y="600" as="sourcePoint"/>
+                        <mxPoint x="1030" y="550" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="CqK5GXQSp2iezG7qc9yQ-15" target="gPxOH9Gd0A_ygllbKu-p-26" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1560" y="573"/>
+                            <mxPoint x="1560" y="1130"/>
+                            <mxPoint x="425" y="1130"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="CqK5GXQSp2iezG7qc9yQ-15" target="ArFxF9tofdYgM8aznHcm-21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="CqK5GXQSp2iezG7qc9yQ-15" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Data&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ GetData(): Data&lt;br&gt;+ ToString(): string&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" parent="1" vertex="1">
+                    <mxGeometry x="1115" y="550" width="190" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-5" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" parent="1" source="CqK5GXQSp2iezG7qc9yQ-17" target="CqK5GXQSp2iezG7qc9yQ-15" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="990" y="705" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="CqK5GXQSp2iezG7qc9yQ-17" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Transaction&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ From: string&lt;br&gt;+ To: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Amount: int&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Signature: string&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ Interface Methods&lt;/div&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="905" y="700" width="190" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="CqK5GXQSp2iezG7qc9yQ-19" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="1015" y="640" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-7" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" parent="1" source="3cCh1QjrxzrGFOsGR-2o-2" target="CqK5GXQSp2iezG7qc9yQ-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-2" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ProofOfWork&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&amp;nbsp;+ ProofDifficulty: int&lt;br&gt;&amp;nbsp;+ CandidateBlock: Block&lt;br&gt;&amp;nbsp;+ mining: bool&lt;br&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ Interface Methods&lt;/div&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ CalculateHash(b Block) string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ proofOfWork(Block,&amp;nbsp; bool): Block&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="210" y="635" width="200" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-8" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="610" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-19" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="3cCh1QjrxzrGFOsGR-2o-13" target="3cCh1QjrxzrGFOsGR-2o-16" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="665" y="860" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-28" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="3cCh1QjrxzrGFOsGR-2o-13" target="3cCh1QjrxzrGFOsGR-2o-20" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="665" y="530" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="gPxOH9Gd0A_ygllbKu-p-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;startArrow=classic;startFill=1;endArrow=none;endFill=0;" parent="1" source="3cCh1QjrxzrGFOsGR-2o-13" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="739.666666666667" y="880" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-13" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Communicator&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ service: *zeroconf.Server&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ socket: *UDPConn&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ peerAddresses []PeerAddress&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ peerMessage: chan Message&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ middleware PeerAddress&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ self PeerAddress&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ Interface Methods&lt;/div&gt;&lt;div&gt;&amp;nbsp;+ terminateCommunicator()&lt;/div&gt;&lt;div&gt;&amp;nbsp;+ initializeSocket(): *UDPConn&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;+ initializeSocketWithPort(int): *UDPConn&lt;/div&gt;&lt;div&gt;&amp;nbsp;+ initializeService(int): *zeroconf.Server&lt;br&gt;&lt;/div&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ discoverPeers(UDPAddr): error&lt;br&gt;+ broadcastToNetwork(Message): error&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ sendToPeer(Message, PeerAddress): error&lt;/p&gt;&lt;div&gt;&amp;nbsp;+ Other Helper Methods&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="620" y="678.75" width="240" height="311.25" as="geometry"/>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-14" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="740" y="635" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-16" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ZeroConf&lt;/b&gt;&lt;br&gt;Library&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#cdeb8b;strokeColor=#36393d;" parent="1" vertex="1">
+                    <mxGeometry x="645" y="1045" width="190" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-17" value="Utilizes" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="740" y="1010" width="50" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="3cCh1QjrxzrGFOsGR-2o-20" target="ArFxF9tofdYgM8aznHcm-21" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="910" y="426"/>
+                            <mxPoint x="910" y="130"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="3cCh1QjrxzrGFOsGR-2o-20" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;CommunicationComponent&lt;/b&gt;&lt;br&gt;Interface&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Initialize(): error&lt;br&gt;+ InitializeWithPort(int): error&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ GetMiddlewarePeer(): PeerAddress&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ GetPeerNodes(): []PeerAddress&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ GetMessageChannel(): chan Message&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ RecieveFromNetwork(bool): error&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ GenerateMessage(string, Data): (Message, error)&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ BroadcastMsgToNetwork(string, Data): error&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ SendMsgToPeer(string, Data, peer): error&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ PingNetwork(): error&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Terminate()&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ PrunePeerNodes()&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#ffcc99;strokeColor=#36393d;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="365" width="280" height="245" as="geometry"/>
+                </mxCell>
+                <mxCell id="gPxOH9Gd0A_ygllbKu-p-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="gPxOH9Gd0A_ygllbKu-p-4" target="CqK5GXQSp2iezG7qc9yQ-15" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="gPxOH9Gd0A_ygllbKu-p-4" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Chain&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ ChainCopy: []Block&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ Interface Methods&lt;/div&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="1115" y="700" width="190" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="gPxOH9Gd0A_ygllbKu-p-5" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;PeerChains&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ List: [][]Block&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ Interface Methods&lt;/div&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="1335" y="700" width="190" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="gPxOH9Gd0A_ygllbKu-p-11" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" parent="1" source="gPxOH9Gd0A_ygllbKu-p-5" target="CqK5GXQSp2iezG7qc9yQ-15" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1000" y="715" as="sourcePoint"/>
+                        <mxPoint x="1172.5" y="650" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="gPxOH9Gd0A_ygllbKu-p-12" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="1205" y="678.75" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="gPxOH9Gd0A_ygllbKu-p-13" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="1315" y="650" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="gPxOH9Gd0A_ygllbKu-p-17" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.742;entryY=1.002;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="3cCh1QjrxzrGFOsGR-2o-20" target="CqK5GXQSp2iezG7qc9yQ-2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="465" y="375" as="sourcePoint"/>
+                        <mxPoint x="610.5" y="320" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="gPxOH9Gd0A_ygllbKu-p-22" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=0;exitDx=0;exitDy=0;fontStyle=1;endArrow=none;endFill=0;" parent="1" source="CqK5GXQSp2iezG7qc9yQ-15" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1157.5" y="555" as="sourcePoint"/>
+                        <mxPoint x="250" y="1140" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="1258" y="510"/>
+                            <mxPoint x="1540" y="510"/>
+                            <mxPoint x="1540" y="1140"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="gPxOH9Gd0A_ygllbKu-p-26" target="3cCh1QjrxzrGFOsGR-2o-13" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="gPxOH9Gd0A_ygllbKu-p-26" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Message&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ From: PeerAddress&lt;br&gt;+ Command: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Data: Data&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ UmarshalJSON([] byte): err&lt;br&gt;&lt;/div&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="840" width="190" height="142.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-3" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" parent="1" source="ArFxF9tofdYgM8aznHcm-4" target="CqK5GXQSp2iezG7qc9yQ-5" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="685" y="490" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-4" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;ProofOfStake&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&amp;nbsp;+ StakeAmount: int&lt;br&gt;&amp;nbsp;+ CandidateBlock: Block&lt;br&gt;&amp;nbsp;+ toMine: Transaction&lt;br&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ Interface Methods&lt;/div&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ CalculateHash(b Block) string&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="635" width="190" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-5" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="610" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-7" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="ArFxF9tofdYgM8aznHcm-8" target="CqK5GXQSp2iezG7qc9yQ-15" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="990" y="925" as="sourcePoint"/>
+                        <mxPoint x="1162.5" y="860" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="1003" y="900"/>
+                            <mxPoint x="890" y="900"/>
+                            <mxPoint x="890" y="595"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-8" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;LotteryEntry&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Stake: int&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Peer: PeerAddress&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ Interface Methods&lt;/div&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="910" y="920" width="185" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-9" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="905" y="880" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;" parent="1" source="ArFxF9tofdYgM8aznHcm-11" target="CqK5GXQSp2iezG7qc9yQ-15" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1210" y="860" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="1210" y="900"/>
+                            <mxPoint x="1320" y="900"/>
+                            <mxPoint x="1320" y="618"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-11" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;CandidateBlock&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Block: Block&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Miner: PeerAddress&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ Interface Methods&lt;/div&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="1115" y="920" width="190" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-12" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;PublicKey&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ X: string&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Y: string&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ Interface Methods&lt;/div&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;&lt;br&gt;&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="1335" y="920" width="190" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-13" style="edgeStyle=orthogonalEdgeStyle;curved=0;rounded=1;sketch=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="ArFxF9tofdYgM8aznHcm-12" target="CqK5GXQSp2iezG7qc9yQ-15" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1000" y="935" as="sourcePoint"/>
+                        <mxPoint x="1257.5" y="860" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="1430" y="900"/>
+                            <mxPoint x="1530" y="900"/>
+                            <mxPoint x="1530" y="595"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-14" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="1235" y="880" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-15" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="1430" y="880" width="80" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-21" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Middleware&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ comComponent: CommunicationComponent&lt;br&gt;+ transactionQueue: Queue&lt;br&gt;+ newTransaction: chan Transaction&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ lotteryPool: []LotteryEntry&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ candidateBlockQueue: Queue&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ blockValidators: int&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ blockValid: bool&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ handleNewTransaction()&lt;br&gt;+ NewMiddeware(component, socketPort, serverPort)&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Initialize(): error&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ Run()&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ terminate()&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ popTransaction(): Transaction&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ popCandidateBlock(): CandidateBlock&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ runLottery(): error&lt;/p&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ runValidation(): error&lt;br&gt;&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="1095" y="-30" width="300" height="320" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-26" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="ArFxF9tofdYgM8aznHcm-25" target="b94bc138ca980ef-1" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-25" value="&lt;p style=&quot;margin: 0px ; margin-top: 4px ; text-align: center&quot;&gt;&lt;b&gt;Client&lt;/b&gt;&lt;br&gt;Class&lt;br&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;p style=&quot;margin: 0px ; margin-left: 4px&quot;&gt;+ publicKey: ecdsa.PublicKey&lt;br&gt;+ peerPublicKeys: map[int]*ecdsa.PublicKey&lt;br&gt;+ privateKey: *ecdsa.PrivateKey&lt;br&gt;+ peer: *Peer&lt;br&gt;+ commandDescriptions: [][]string&lt;br&gt;+ communicator: CommunicationComponent&lt;/p&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div&gt;&amp;nbsp;+ Interface Methods&lt;/div&gt;&lt;div&gt;&amp;nbsp;+ sendTransaction()&lt;/div&gt;&lt;div&gt;&amp;nbsp;+ printCommands()&lt;/div&gt;&lt;div&gt;&amp;nbsp;+ listPeers()&lt;/div&gt;&lt;div&gt;&amp;nbsp;+ createNewTransaction(int, int): error&lt;/div&gt;&lt;div&gt;&amp;nbsp;+ hexToPublicKey(string, string) *ecdsa.PublicKey&lt;br&gt;&lt;/div&gt;&amp;nbsp;+ ecdsaPublicKeytoPublicKey() PublicKey" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;rounded=1;fillColor=#b1ddf0;strokeColor=#10739e;" parent="1" vertex="1">
+                    <mxGeometry x="-140" y="678.75" width="280" height="291.25" as="geometry"/>
+                </mxCell>
+                <mxCell id="ArFxF9tofdYgM8aznHcm-27" value="Implements" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
+                    <mxGeometry x="-80" y="640" width="80" height="20" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
