@@ -3,6 +3,7 @@ package blockchain
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"log"
 	"strconv"
 	"time"
@@ -129,10 +130,10 @@ func (p *ProofOfStake) HandleCommand(msg Message, peer *Peer) (err error) {
 		}()
 
 	default:
-		log.Println("Warning: Command \"" + msg.Command + "\" not supported")
+		err = errors.New("command not supported")
 	}
 
-	return
+	return err
 
 }
 

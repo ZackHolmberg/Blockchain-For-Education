@@ -40,8 +40,10 @@ func (m *Middleware) handleNewTransaction(w http.ResponseWriter, r *http.Request
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
 	}
+
 	from := r.FormValue("from")
 	to := r.FormValue("to")
+	signature := r.FormValue("signature")
 
 	amount, err := strconv.Atoi(r.FormValue("amount"))
 	if err != nil {
@@ -51,7 +53,7 @@ func (m *Middleware) handleNewTransaction(w http.ResponseWriter, r *http.Request
 	}
 
 	// Transform into a Transaction struct
-	newTransaction := Transaction{From: from, To: to, Amount: amount}
+	newTransaction := Transaction{From: from, To: to, Amount: amount, Signature: signature}
 
 	// Add it the the queue of transactions to be sent out
 	m.transactionQueue.PushBack(newTransaction)
@@ -61,7 +63,7 @@ func (m *Middleware) handleNewTransaction(w http.ResponseWriter, r *http.Request
 
 }
 
-// NewMiddleware creates and returns a new Middleware, with the Genesis Block initialized
+// NewMiddleware creates and returns a new Middleware
 func NewMiddleware(com CommunicationComponent, udpPort int, serverPort int) (Middleware, error) {
 
 	// Define a new Middleware with the passed component value
@@ -163,7 +165,7 @@ func (m *Middleware) Run() {
 			switch peerMsg.Command {
 			case "PING":
 				log.Printf("Recieved a ping from %s\n", peerMsg.From.String())
-			case "GET_CHAIN", "PEER_CHAIN":
+			case "GET_CHAIN", "PEER_CHAIN", "PUBLIC_KEYS":
 				// Ignore, this is only a peer-relevant command but since Middleware is a part of the network it will get the messages
 			case "PROOF":
 				go func() {
@@ -221,7 +223,8 @@ func (m *Middleware) Run() {
 				log.Println("Warning: Command \"" + peerMsg.Command + "\" not supported")
 			}
 		default:
-			//There was no message to read, thus do nothing
+			// Timeout for 5 milliseconds to limit the number of iterations of the loop to 20 per second
+			time.Sleep(5 * time.Millisecond)
 		}
 
 		// If we aren't already in a mining session and there is at least one transaction to be mined, pop a transaction
@@ -331,9 +334,6 @@ func (m *Middleware) Run() {
 		// If this peer hasn't received a message from another peer for 75 seconds,
 		// then remove that peer from the list of known nodes
 		m.communicationComponent.PrunePeerNodes()
-
-		// Timeout for 5 milliseconds to limit the number of iterations of the loop to 20 per second
-		time.Sleep(5 * time.Millisecond)
 
 	}
 }

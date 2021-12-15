@@ -11,18 +11,6 @@ import (
 
 // ============================ Peer ============================
 
-// Node defines required methods of any Peer Node implementation
-type Node interface {
-	NewPeer(com CommunicationComponent, p ConsensusComponent) *Node
-	Run()
-
-	initialize() error
-	mine()
-	createGenesisNode()
-	terminate()
-	initializeComponents() error
-}
-
 // Peer is the Peer object
 type Peer struct {
 	communicationComponent CommunicationComponent
@@ -60,8 +48,11 @@ type CommunicationComponent interface {
 
 // ClientComponent standardizes methods for any Peer client component
 type ClientComponent interface {
-	Initialize(com CommunicationComponent, wallet *int) error
+	Initialize(com CommunicationComponent, p *Peer) error
 	Terminate()
+	Verify(t Transaction) bool
+	Sign(t Transaction) (Transaction, error)
+	HandleCommand(msg Message, com CommunicationComponent) (err error)
 }
 
 // NewPeer creates and returns a new Peer, with the Genesis Block and Components initialized
@@ -213,36 +204,68 @@ func (p *Peer) Run() {
 
 			case "VALIDATE":
 				go func() {
-					// Tell the middleware if the received block is valid or not
-					log.Println("Received candidate block from Middleware, validating...")
 					candidateBlock := peerMsg.Data.(CandidateBlock).Block
-					valid := p.consensusComponent.ValidateBlock(candidateBlock)
-					if valid {
-						log.Println("Verified received candidate block is valid")
-						toSend, err := p.communicationComponent.GenerateMessage("BLOCK_VALID", nil)
-						if err != nil {
-							log.Printf("Error generating message: %v\n", err)
-						}
 
-						err = p.communicationComponent.SendMsgToPeer(toSend, p.communicationComponent.GetMiddlewarePeer())
-						if err != nil {
-							log.Printf("Error sending message to Middleware: %v\n", err)
+					if candidateBlock.Data.(Transaction).From != p.communicationComponent.GetSelfAddress().String() {
+						// Tell the middleware if the received block is valid or not
+						log.Println("Received candidate block from Middleware, validating...")
+
+						validHash := p.consensusComponent.ValidateBlock(candidateBlock)
+
+						validSignature := p.clientComponent.Verify(candidateBlock.Data.(Transaction))
+
+						if validHash && validSignature {
+							log.Println("Verified received candidate block is valid")
+							toSend, err := p.communicationComponent.GenerateMessage("BLOCK_VALID", nil)
+							if err != nil {
+								log.Printf("Error generating message: %v\n", err)
+							}
+
+							err = p.communicationComponent.SendMsgToPeer(toSend, p.communicationComponent.GetMiddlewarePeer())
+							if err != nil {
+								log.Printf("Error sending message to Middleware: %v\n", err)
+							}
 						}
+					} else {
+						log.Println("Received candidate block for own transaction, not participating in validation.")
+
 					}
-
 				}()
 
 			// If the the received command isn't supported by the peer, then it must be a component-specific
-			// command, and thus we hand it off for the component to handle. Currently, only the consensus component
-			// so we can assume the command is meant for it and hand it off
+			// command, and thus we hand it off for the component to handle.
 			default:
+				handled := false
+
 				err := p.consensusComponent.HandleCommand(peerMsg, p)
 				if err != nil {
-					log.Printf("Consensus component had error when handling message: %+v\n", err)
+					if err.Error() != "command not supported" {
+						handled = true
+						log.Printf("Consensus component had error when handling message: %+v\n", err)
+					}
+				} else {
+					handled = true
+				}
+
+				if !handled {
+					err = p.clientComponent.HandleCommand(peerMsg, p.communicationComponent)
+					if err != nil {
+						if err.Error() != "command not supported" {
+							handled = true
+							log.Printf("Client component had error when handling message: %+v\n", err)
+						}
+					} else {
+						handled = true
+					}
+				}
+
+				if !handled {
+					log.Println("Warning: Command \"" + peerMsg.Command + "\" not supported")
 				}
 			}
 		default:
-			//There was no message to read, thus do nothing
+			//There was no message to read, thus timeout for 5 milliseconds to limit the number of iterations of the loop to 20 per s
+			time.Sleep(5 * time.Millisecond)
 		}
 
 		// Ping all peer nodes on the network once every minute
@@ -258,9 +281,6 @@ func (p *Peer) Run() {
 		// If this peer hasn't received a message from another peer for 75 seconds,
 		// then remove that peer from the list of known nodes
 		p.communicationComponent.PrunePeerNodes()
-
-		// Timeout for 5 milliseconds to limit the number of iterations of the loop to 20 per s
-		time.Sleep(5 * time.Millisecond)
 
 	}
 }
@@ -294,12 +314,12 @@ func (p *Peer) initializeComponents() error {
 		return err
 	}
 
-	// Initialize the transactions component
-	err = p.clientComponent.Initialize(p.communicationComponent, &p.wallet)
+	// Initialize the client component
+	err = p.clientComponent.Initialize(p.communicationComponent, p)
 
-	// If there was an error initializing the transactions component
+	// If there was an error initializing the client component
 	if err != nil {
-		fmt.Printf("Error initializing Peer transactions component: %+v", err)
+		fmt.Printf("Error initializing Peer client component: %+v", err)
 		return err
 	}
 

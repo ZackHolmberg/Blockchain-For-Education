@@ -58,7 +58,8 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 			from := val.(string)
 			to := dataObject["to"].(string)
 			amount := int(dataObject["amount"].(float64))
-			dataStruct = Transaction{From: from, To: to, Amount: amount}
+			signature := dataObject["signature"].(string)
+			dataStruct = Transaction{From: from, To: to, Amount: amount, Signature: signature}
 
 		} else if val, ok := dataObject["chainCopy"]; ok {
 			// Then the data is a chain copy, so unmarshal into a ChainCopy struct
@@ -74,7 +75,8 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 				from := dataMap["from"].(string)
 				to := dataMap["to"].(string)
 				amount := int(dataMap["amount"].(float64))
-				newTransaction := Transaction{From: from, To: to, Amount: amount}
+				signature := dataMap["signature"].(string)
+				newTransaction := Transaction{From: from, To: to, Amount: amount, Signature: signature}
 
 				// Umarshal the rest of the block
 				index := int(blockMap["Index"].(float64))
@@ -108,7 +110,8 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 						from := dataMap["from"].(string)
 						to := dataMap["to"].(string)
 						amount := int(dataMap["amount"].(float64))
-						newTransaction := Transaction{From: from, To: to, Amount: amount}
+						signature := dataMap["signature"].(string)
+						newTransaction := Transaction{From: from, To: to, Amount: amount, Signature: signature}
 
 						// Umarshal the rest of the block
 						index := int(blockMap["Index"].(float64))
@@ -149,7 +152,8 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 			from := dataMap["from"].(string)
 			to := dataMap["to"].(string)
 			amount := int(dataMap["amount"].(float64))
-			newTransaction := Transaction{From: from, To: to, Amount: amount}
+			signature := dataMap["signature"].(string)
+			newTransaction := Transaction{From: from, To: to, Amount: amount, Signature: signature}
 
 			index := int(blockMap["Index"].(float64))
 			timestamp := blockMap["Timestamp"].(string)
@@ -158,6 +162,13 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 			nonce := int(blockMap["Nonce"].(float64))
 			candidateBlock := Block{Data: newTransaction, Index: index, Timestamp: timestamp, PrevHash: prevHash, Hash: hash, Nonce: nonce}
 			dataStruct = CandidateBlock{Block: candidateBlock, Miner: newPeer}
+
+		} else if val, ok := dataObject["x"]; ok {
+
+			// Then the data is a lottery entry, so unmarshal into a LotteryEntry struct
+			x := val.(string)
+			y := dataObject["y"].(string)
+			dataStruct = PublicKey{X: x, Y: y}
 
 		} else {
 			// Else the data is of an unsupported type
@@ -173,4 +184,5 @@ func (m *Message) UnmarshalJSON(bytes []byte) error {
 	return nil
 }
 
-// TODO: Create helper functions that can be called and resued in different data cases. Including unmashalling a transaction, a block, and a chain
+// TODO: Lot's of duplicate code here.
+// Create helper functions that can be called and reused in different data cases. Including unmarshalling a transaction, a block, and a chain
