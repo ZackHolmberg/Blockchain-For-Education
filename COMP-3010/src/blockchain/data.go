@@ -15,9 +15,10 @@ type Data interface {
 
 // Transaction is a type of Data
 type Transaction struct {
-	From   string `json:"from"`
-	To     string `json:"to"`
-	Amount int    `json:"amount"`
+	From      string `json:"from"`
+	To        string `json:"to"`
+	Amount    int    `json:"amount"`
+	Signature string `json:"signature"`
 }
 
 // GetData is the interface method that is required to retrieve Data object
@@ -118,6 +119,29 @@ func (c CandidateBlock) GetData() Data {
 // ToString is the interface method that is required to transform the Data object into a string for communication
 func (c CandidateBlock) ToString() string {
 	b, err := json.Marshal(c)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return string(b)
+}
+
+// =========== PublicKey ===========
+
+// PublicKey represents a peer's mined block that must be validated
+type PublicKey struct {
+	X string `json:"x"`
+	Y string `json:"y"`
+}
+
+// GetData is the interface method that is required to retrieve Data object
+func (pk PublicKey) GetData() Data {
+	return pk
+}
+
+// ToString is the interface method that is required to transform the Data object into a string for communication
+func (pk PublicKey) ToString() string {
+	b, err := json.Marshal(pk)
 	if err != nil {
 		fmt.Println(err)
 		return ""
